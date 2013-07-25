@@ -56,7 +56,7 @@ func mask32(nbits byte) uint32 {
 
 type ipv4Int uint32
 
-func (i ipv4Int) toIP() net.IP {
+func (i ipv4Int) IP() net.IP {
 	var b [net.IPv4len]byte
 	binary.BigEndian.PutUint32(b[:], uint32(i))
 	return net.IP(b[:])
@@ -113,7 +113,7 @@ func (i *ipv6Int) setNetmask(nbits byte) {
 	}
 }
 
-func (i *ipv6Int) toIP() net.IP {
+func (i *ipv6Int) IP() net.IP {
 	var b [net.IPv6len]byte
 	binary.BigEndian.PutUint64(b[:8], i[0])
 	binary.BigEndian.PutUint64(b[8:16], i[1])

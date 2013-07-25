@@ -82,7 +82,7 @@ func (p *IPv6) String() string {
 	if p == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("%s/%d", p.addr.toIP().String(), p.nbits)
+	return fmt.Sprintf("%s/%d", p.addr.IP().String(), p.nbits)
 }
 
 // Len implements the Len method of ipaddr.Prefix interface.
@@ -110,7 +110,7 @@ func (p *IPv6) Bits(pos, nbits int) uint32 {
 
 // Addr implements the Addr method of ipaddr.Prefix interface.
 func (p *IPv6) Addr() net.IP {
-	return p.addr.toIP()
+	return p.addr.IP()
 }
 
 func (p *IPv6) lastAddr() ipv6Int {
@@ -123,14 +123,14 @@ func (p *IPv6) lastAddr() ipv6Int {
 // LastAddr implements the LastAddr method of ipaddr.Prefix interface.
 func (p *IPv6) LastAddr() net.IP {
 	i := p.lastAddr()
-	return i.toIP()
+	return i.IP()
 }
 
 // Hostmask implements the Hostmask method of ipaddr.Prefix interface.
 func (p *IPv6) Hostmask() net.IPMask {
 	var i ipv6Int
 	i.setHostmask(p.nbits)
-	return net.IPMask(i.toIP())
+	return net.IPMask(i.IP())
 }
 
 // Netmask implements the Netmask method of ipaddr.Prefix interface.
@@ -151,7 +151,7 @@ func (p *IPv6) Hosts(begin net.IP) []net.IP {
 	}
 	var hosts []net.IP
 	if ok, _ := p.isHostAssignable(cur); ok && p.contains(cur) {
-		hosts = append(hosts, cur.toIP())
+		hosts = append(hosts, cur.IP())
 	}
 	if IPv6PrefixLen-p.nbits < 17 { // don't bother runtime.makeslice by big number
 		for p.contains(cur) {
@@ -160,7 +160,7 @@ func (p *IPv6) Hosts(begin net.IP) []net.IP {
 			}
 			cur.incr()
 			if ok, _ := p.isHostAssignable(cur); ok {
-				hosts = append(hosts, cur.toIP())
+				hosts = append(hosts, cur.IP())
 			}
 		}
 		return hosts
@@ -311,7 +311,7 @@ loop:
 		select {
 		case <-idleTimeout:
 			break loop
-		case iter.ch <- iter.cur.toIP():
+		case iter.ch <- iter.cur.IP():
 		}
 	}
 }

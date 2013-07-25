@@ -85,7 +85,7 @@ func (p *IPv4) String() string {
 	if p == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("%s/%d", p.addr.toIP().String(), p.nbits)
+	return fmt.Sprintf("%s/%d", p.addr.IP().String(), p.nbits)
 }
 
 // Len implements the Len method of ipaddr.Prefix interface.
@@ -109,7 +109,7 @@ func (p *IPv4) Bits(pos, nbits int) uint32 {
 
 // Addr implements the Addr method of ipaddr.Prefix interface.
 func (p *IPv4) Addr() net.IP {
-	return p.addr.toIP()
+	return p.addr.IP()
 }
 
 func (p *IPv4) lastAddr() ipv4Int {
@@ -119,7 +119,7 @@ func (p *IPv4) lastAddr() ipv4Int {
 // LastAddr implements the LastAddr method of ipaddr.Prefix interface.
 func (p *IPv4) LastAddr() net.IP {
 	i := p.lastAddr()
-	return i.toIP()
+	return i.IP()
 }
 
 // BroadcastAddr returns the directed broadcast address for the
@@ -129,13 +129,13 @@ func (p *IPv4) BroadcastAddr() net.IP {
 		return nil
 	}
 	i := p.addr | ipv4Int(^mask32(p.nbits))
-	return i.toIP()
+	return i.IP()
 }
 
 // Hostmask implements the Hostmask method of ipaddr.Prefix interface.
 func (p *IPv4) Hostmask() net.IPMask {
 	i := ipv4Int(^mask32(p.nbits))
-	return net.IPMask(i.toIP())
+	return net.IPMask(i.IP())
 }
 
 // Netmask implements the Netmask method of ipaddr.Prefix interface.
@@ -156,7 +156,7 @@ func (p *IPv4) Hosts(begin net.IP) []net.IP {
 	}
 	var hosts []net.IP
 	if ok, _ := p.isHostAssignable(cur); ok && p.contains(cur) {
-		hosts = append(hosts, cur.toIP())
+		hosts = append(hosts, cur.IP())
 	}
 	if IPv4PrefixLen-p.nbits < 17 { // don't bother runtime.makeslice by big number
 		for p.contains(cur) {
@@ -165,7 +165,7 @@ func (p *IPv4) Hosts(begin net.IP) []net.IP {
 			}
 			cur++
 			if ok, _ := p.isHostAssignable(cur); ok {
-				hosts = append(hosts, cur.toIP())
+				hosts = append(hosts, cur.IP())
 			}
 		}
 		return hosts
@@ -306,7 +306,7 @@ loop:
 		select {
 		case <-idleTimeout:
 			break loop
-		case iter.ch <- iter.cur.toIP():
+		case iter.ch <- iter.cur.IP():
 		}
 	}
 }
