@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math/big"
 	"net"
+	"time"
 )
 
 // Maximum length of IPv4 address prefix in bits.
@@ -291,13 +292,21 @@ type ipv4HostIter struct {
 
 func (iter *ipv4HostIter) run() {
 	defer close(iter.ch)
+	var idleTimeout <-chan time.Time
+loop:
 	for iter.p.contains(iter.cur) {
 		if _, eor := iter.p.isHostAssignable(iter.cur); eor {
 			break
 		}
 		iter.cur++
-		if ok, _ := iter.p.isHostAssignable(iter.cur); ok {
-			iter.ch <- iter.cur.toIP()
+		if ok, _ := iter.p.isHostAssignable(iter.cur); !ok {
+			continue
+		}
+		idleTimeout = time.After(1 * time.Second)
+		select {
+		case <-idleTimeout:
+			break loop
+		case iter.ch <- iter.cur.toIP():
 		}
 	}
 }
@@ -317,14 +326,20 @@ func (iter *ipv4SubnetIter) run() {
 	}
 	m := ipv4Int(^mask32(iter.p.nbits + iter.nbits))
 	nbits := iter.p.nbits + iter.nbits
+	var idleTimeout <-chan time.Time
+loop:
 	for !iter.p.isLimitedBroadcastAddr(iter.cur) && !iter.p.isBroadcastAddr(iter.cur|m) {
 		if !iter.passed {
 			iter.passed = true
-			iter.ch <- newIPv4(iter.cur, nbits)
 		} else {
 			iter.cur |= m
 			iter.cur++
-			iter.ch <- newIPv4(iter.cur, nbits)
+		}
+		idleTimeout = time.After(1 * time.Second)
+		select {
+		case <-idleTimeout:
+			break loop
+		case iter.ch <- newIPv4(iter.cur, nbits):
 		}
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math/big"
 	"net"
+	"time"
 )
 
 // Maximum length of IPv6 address prefix in bits.
@@ -296,13 +297,21 @@ type ipv6HostIter struct {
 
 func (iter *ipv6HostIter) run() {
 	defer close(iter.ch)
+	var idleTimeout <-chan time.Time
+loop:
 	for iter.p.contains(iter.cur) {
 		if _, eor := iter.p.isHostAssignable(iter.cur); eor {
 			break
 		}
 		iter.cur.incr()
-		if ok, _ := iter.p.isHostAssignable(iter.cur); ok {
-			iter.ch <- iter.cur.toIP()
+		if ok, _ := iter.p.isHostAssignable(iter.cur); !ok {
+			continue
+		}
+		idleTimeout = time.After(1 * time.Second)
+		select {
+		case <-idleTimeout:
+			break loop
+		case iter.ch <- iter.cur.toIP():
 		}
 	}
 }
@@ -323,14 +332,20 @@ func (iter *ipv6SubnetIter) run() {
 	var m ipv6Int
 	m.setHostmask(iter.p.nbits + iter.nbits)
 	nbits := iter.p.nbits + iter.nbits
+	var idleTimeout <-chan time.Time
+loop:
 	for !iter.p.isLastAddr(ipv6Int{iter.cur[0] | m[0], iter.cur[1] | m[1]}) {
 		if !iter.passed {
 			iter.passed = true
-			iter.ch <- newIPv6(iter.cur, nbits)
 		} else {
 			iter.cur[0], iter.cur[1] = iter.cur[0]|m[0], iter.cur[1]|m[1]
 			iter.cur.incr()
-			iter.ch <- newIPv6(iter.cur, nbits)
+		}
+		idleTimeout = time.After(1 * time.Second)
+		select {
+		case <-idleTimeout:
+			break loop
+		case iter.ch <- newIPv6(iter.cur, nbits):
 		}
 	}
 }
