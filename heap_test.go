@@ -6,9 +6,10 @@ package ipaddr_test
 
 import (
 	"container/heap"
-	"github.com/mikioh/ipaddr"
 	"net"
 	"testing"
+
+	"github.com/mikioh/ipaddr"
 )
 
 type prefixHeap []ipaddr.Prefix

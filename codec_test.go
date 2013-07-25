@@ -6,9 +6,10 @@ package ipaddr_test
 
 import (
 	"bytes"
-	"github.com/mikioh/ipaddr"
 	"net"
 	"testing"
+
+	"github.com/mikioh/ipaddr"
 )
 
 var nlriCodecTests = []struct {

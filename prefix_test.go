@@ -6,10 +6,11 @@ package ipaddr_test
 
 import (
 	"bytes"
-	"github.com/mikioh/ipaddr"
 	"math/big"
 	"net"
 	"testing"
+
+	"github.com/mikioh/ipaddr"
 )
 
 var containsTests = []struct {

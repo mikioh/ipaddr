@@ -5,10 +5,11 @@
 package ipaddr_test
 
 import (
-	"github.com/mikioh/ipaddr"
 	"net"
 	"sort"
 	"testing"
+
+	"github.com/mikioh/ipaddr"
 )
 
 var prefixTrieTests = [][]struct {

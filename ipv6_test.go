@@ -5,9 +5,10 @@
 package ipaddr_test
 
 import (
-	"github.com/mikioh/ipaddr"
 	"net"
 	"testing"
+
+	"github.com/mikioh/ipaddr"
 )
 
 func BenchmarkIPv6Contains(b *testing.B) {

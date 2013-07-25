@@ -6,6 +6,7 @@ package ipaddr_test
 
 import (
 	"fmt"
+
 	"github.com/mikioh/ipaddr"
 )
 
