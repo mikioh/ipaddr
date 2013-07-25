@@ -147,17 +147,17 @@ func SummaryPrefix(prefixes []Prefix) Prefix {
 	}
 	switch prefixes[0].(type) {
 	case *IPv4:
-		if p := ipv4SummaryPrefix(prefixes); p == nil {
+		p := ipv4SummaryPrefix(prefixes)
+		if p == nil {
 			return nil
-		} else {
-			return p
 		}
+		return p
 	case *IPv6:
-		if p := ipv6SummaryPrefix(prefixes); p == nil {
+		p := ipv6SummaryPrefix(prefixes)
+		if p == nil {
 			return nil
-		} else {
-			return p
 		}
+		return p
 	default:
 		return nil
 	}
