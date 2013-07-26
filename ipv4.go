@@ -180,7 +180,7 @@ func (p *IPv4) Hosts(begin net.IP) []net.IP {
 func (p *IPv4) HostIter(first net.IP) <-chan net.IP {
 	iter := &ipv4HostIter{
 		p:  IPv4{addr: p.addr, nbits: p.nbits},
-		ch: make(chan net.IP),
+		ch: make(chan net.IP, 1),
 	}
 	if len(first) != 0 {
 		iter.cur = ipToIPv4Int(first.To4())
@@ -218,7 +218,7 @@ func (p *IPv4) SubnetIter(nbits int) <-chan Prefix {
 		p:     IPv4{addr: p.addr, nbits: p.nbits},
 		nbits: byte(nbits),
 		cur:   p.addr,
-		ch:    make(chan Prefix),
+		ch:    make(chan Prefix, 1),
 	}
 	go iter.run()
 	return iter.ch

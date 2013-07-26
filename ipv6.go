@@ -175,7 +175,7 @@ func (p *IPv6) Hosts(begin net.IP) []net.IP {
 func (p *IPv6) HostIter(first net.IP) <-chan net.IP {
 	iter := &ipv6HostIter{
 		p:  IPv6{addr: p.addr, nbits: p.nbits},
-		ch: make(chan net.IP),
+		ch: make(chan net.IP, 1),
 	}
 	if len(first) != 0 {
 		iter.cur = ipToIPv6Int(first.To16())
@@ -215,7 +215,7 @@ func (p *IPv6) SubnetIter(nbits int) <-chan Prefix {
 		p:     IPv6{addr: p.addr, nbits: p.nbits},
 		nbits: byte(nbits),
 		cur:   p.addr,
-		ch:    make(chan Prefix),
+		ch:    make(chan Prefix, 1),
 	}
 	go iter.run()
 	return iter.ch
