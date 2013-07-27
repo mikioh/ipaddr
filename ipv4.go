@@ -73,9 +73,9 @@ func (p *IPv4) Overlaps(prefix Prefix) bool {
 
 // Equal implements the Equal method of ipaddr.Prefix interface.
 func (p *IPv4) Equal(prefix Prefix) bool {
-	switch prefix := prefix.(type) {
+	switch prefix.(type) {
 	case *IPv4:
-		return p.addr == prefix.addr && p.nbits == prefix.nbits
+		return p.addr == prefix.(*IPv4).addr && p.nbits == prefix.(*IPv4).nbits
 	}
 	return false
 }
@@ -231,10 +231,10 @@ func (p *IPv4) chopup() (IPv4, IPv4) {
 // Exclude implements the Exclude method of ipaddr.Prefix interface.
 func (p *IPv4) Exclude(prefix Prefix) []Prefix {
 	var x IPv4
-	switch prefix := prefix.(type) {
+	switch prefix.(type) {
 	case *IPv4:
-		x.addr = prefix.addr
-		x.nbits = prefix.nbits
+		x.addr = prefix.(*IPv4).addr
+		x.nbits = prefix.(*IPv4).nbits
 		if !p.contains(x.addr) {
 			return nil
 		}
