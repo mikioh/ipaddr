@@ -5,10 +5,18 @@
 package ipaddr
 
 import (
+	"encoding"
 	"fmt"
 	"math/big"
 	"net"
 	"time"
+)
+
+var (
+	_ Prefix                   = &IPv6{}
+	_ encoding.TextMarshaler   = &IPv6{}
+	_ encoding.TextUnmarshaler = &IPv6{}
+	_ fmt.Stringer             = &IPv6{}
 )
 
 // Maximum length of IPv6 address prefix in bits.
@@ -77,7 +85,7 @@ func (p *IPv6) Equal(prefix Prefix) bool {
 	return false
 }
 
-// String implements the Srting method of fmt.Stringer interface.
+// String implements the String method of fmt.Stringer interface.
 func (p *IPv6) String() string {
 	if p == nil {
 		return "<nil>"
@@ -281,6 +289,24 @@ func (p *IPv6) Set(ip net.IP, nbits int) error {
 		return nil
 	}
 	return errInvalidArgument
+}
+
+// MarshalText implements the MarshalText method of
+// encoding.TextMarshaler interface.
+func (p *IPv6) MarshalText() ([]byte, error) {
+	return []byte(p.String()), nil
+}
+
+// UnmarshalText implements the UnmarshalText method of
+// encoding.TextUnmarshaler interface.
+func (p *IPv6) UnmarshalText(text []byte) error {
+	s := string(text)
+	_, ipn, err := net.ParseCIDR(s)
+	if err != nil {
+		return err
+	}
+	nbits, _ := ipn.Mask.Size()
+	return p.Set(ipn.IP, nbits)
 }
 
 func newIPv6(i ipv6Int, nbits byte) *IPv6 {

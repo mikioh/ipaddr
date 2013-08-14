@@ -5,10 +5,18 @@
 package ipaddr
 
 import (
+	"encoding"
 	"fmt"
 	"math/big"
 	"net"
 	"time"
+)
+
+var (
+	_ Prefix                   = &IPv4{}
+	_ encoding.TextMarshaler   = &IPv4{}
+	_ encoding.TextUnmarshaler = &IPv4{}
+	_ fmt.Stringer             = &IPv4{}
 )
 
 // Maximum length of IPv4 address prefix in bits.
@@ -276,6 +284,24 @@ func (p *IPv4) Set(ip net.IP, nbits int) error {
 		return nil
 	}
 	return errInvalidArgument
+}
+
+// MarshalText implements the MarshalText method of
+// encoding.TextMarshaler interface.
+func (p *IPv4) MarshalText() ([]byte, error) {
+	return []byte(p.String()), nil
+}
+
+// UnmarshalText implements the UnmarshalText method of
+// encoding.TextUnmarshaler interface.
+func (p *IPv4) UnmarshalText(text []byte) error {
+	s := string(text)
+	_, ipn, err := net.ParseCIDR(s)
+	if err != nil {
+		return err
+	}
+	nbits, _ := ipn.Mask.Size()
+	return p.Set(ipn.IP, nbits)
 }
 
 func newIPv4(i ipv4Int, nbits byte) *IPv4 {
