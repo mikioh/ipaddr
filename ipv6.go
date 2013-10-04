@@ -70,9 +70,9 @@ func (p *IPv6) Overlaps(prefix Prefix) bool {
 
 // Equal implements the Equal method of ipaddr.Prefix interface.
 func (p *IPv6) Equal(prefix Prefix) bool {
-	switch prefix.(type) {
+	switch q := prefix.(type) {
 	case *IPv6:
-		return p.addr == prefix.(*IPv6).addr && p.nbits == prefix.(*IPv6).nbits
+		return p.addr == q.addr && p.nbits == q.nbits
 	}
 	return false
 }
@@ -230,10 +230,10 @@ func (p *IPv6) chopup() (IPv6, IPv6) {
 // Exclude implements the Exclude method of ipaddr.Prefix interface.
 func (p *IPv6) Exclude(prefix Prefix) []Prefix {
 	var x IPv6
-	switch prefix.(type) {
+	switch q := prefix.(type) {
 	case *IPv6:
-		x.addr = prefix.(*IPv6).addr
-		x.nbits = prefix.(*IPv6).nbits
+		x.addr = q.addr
+		x.nbits = q.nbits
 		if !p.contains(x.addr) {
 			return nil
 		}
