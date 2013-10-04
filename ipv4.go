@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+var (
+	_ Prefix       = &IPv4{}
+	_ fmt.Stringer = &IPv4{}
+)
+
 // Maximum length of IPv4 address prefix in bits.
 const IPv4PrefixLen = 8 * net.IPv4len
 

@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+var (
+	_ Prefix       = &IPv6{}
+	_ fmt.Stringer = &IPv6{}
+)
+
 // Maximum length of IPv6 address prefix in bits.
 const IPv6PrefixLen = 8 * net.IPv6len
 
