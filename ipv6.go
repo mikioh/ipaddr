@@ -77,7 +77,7 @@ func (p *IPv6) Equal(prefix Prefix) bool {
 	return false
 }
 
-// String implements the Srting method of fmt.Stringer interface.
+// String implements the String method of fmt.Stringer interface.
 func (p *IPv6) String() string {
 	if p == nil {
 		return "<nil>"
