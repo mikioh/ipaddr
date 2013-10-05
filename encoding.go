@@ -6,50 +6,11 @@
 
 package ipaddr
 
-import (
-	"encoding"
-	"net"
-)
+import "encoding"
 
 var (
 	_ encoding.TextMarshaler   = &IPv4{}
-	_ encoding.TextMarshaler   = &IPv6{}
 	_ encoding.TextUnmarshaler = &IPv4{}
+	_ encoding.TextMarshaler   = &IPv6{}
 	_ encoding.TextUnmarshaler = &IPv6{}
 )
-
-// MarshalText implements the MarshalText method of
-// encoding.TextMarshaler interface.
-func (p *IPv4) MarshalText() ([]byte, error) {
-	return []byte(p.String()), nil
-}
-
-// UnmarshalText implements the UnmarshalText method of
-// encoding.TextUnmarshaler interface.
-func (p *IPv4) UnmarshalText(text []byte) error {
-	s := string(text)
-	_, ipn, err := net.ParseCIDR(s)
-	if err != nil {
-		return err
-	}
-	nbits, _ := ipn.Mask.Size()
-	return p.Set(ipn.IP, nbits)
-}
-
-// MarshalText implements the MarshalText method of
-// encoding.TextMarshaler interface.
-func (p *IPv6) MarshalText() ([]byte, error) {
-	return []byte(p.String()), nil
-}
-
-// UnmarshalText implements the UnmarshalText method of
-// encoding.TextUnmarshaler interface.
-func (p *IPv6) UnmarshalText(text []byte) error {
-	s := string(text)
-	_, ipn, err := net.ParseCIDR(s)
-	if err != nil {
-		return err
-	}
-	nbits, _ := ipn.Mask.Size()
-	return p.Set(ipn.IP, nbits)
-}

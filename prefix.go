@@ -94,6 +94,14 @@ type Prefix interface {
 	// Set replaces the existing address and prefix length of the
 	// prefix with ip and nbits.
 	Set(ip net.IP, nbits int) error
+
+	// MarshalText returns the UTF-8-encoded text form of the
+	// prefix.
+	MarshalText() ([]byte, error)
+
+	// UnmarshalText replaces the existing address and prefix
+	// length of the prefix with text.
+	UnmarshalText(text []byte) error
 }
 
 // NewPrefix returns a new Prefix.

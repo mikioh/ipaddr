@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"math/big"
 	"net"
+	"reflect"
 	"testing"
 
 	"github.com/mikioh/ipaddr"
@@ -430,6 +431,40 @@ func TestSet(t *testing.T) {
 		}
 		if !p.Equal(p1) {
 			t.Fatalf("got %v; expected %v", p, p1)
+		}
+	}
+}
+
+var textMarshalerTests = []struct {
+	addr      net.IP
+	prefixLen int
+	out       []byte
+}{
+	{net.ParseIP("192.168.0.0"), 24, []byte("192.168.0.0/24")},
+
+	{net.ParseIP("2001:db8::cafe"), 127, []byte("2001:db8::cafe/127")},
+}
+
+func TestTextMarshaler(t *testing.T) {
+	for _, tt := range textMarshalerTests {
+		p1, err := ipaddr.NewPrefix(tt.addr, tt.prefixLen)
+		if err != nil {
+			t.Fatalf("ipaddr.NewPrefix failed: %v", err)
+		}
+		out, err := p1.MarshalText()
+		if err != nil {
+			t.Fatalf("ipaddr.Prefix.MarshalText failed: %v", err)
+		} else if !reflect.DeepEqual(out, tt.out) {
+			t.Fatalf("got %#v; expected %#v", out, tt.out)
+		}
+		p2, err := ipaddr.NewPrefix(tt.addr, tt.prefixLen)
+		if err != nil {
+			t.Fatalf("ipaddr.NewPrefix failed: %v", err)
+		}
+		if err := p2.UnmarshalText(tt.out); err != nil {
+			t.Fatalf("ipaddr.Prefix.UnmarshalText failed: %v", err)
+		} else if !reflect.DeepEqual(p2, p1) {
+			t.Fatalf("got %#v; expected %#v", p2, p1)
 		}
 	}
 }
