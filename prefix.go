@@ -95,6 +95,14 @@ type Prefix interface {
 	// prefix with ip and nbits.
 	Set(ip net.IP, nbits int) error
 
+	// MarshalBinary returns the BGP NLRI binary form of the
+	// prefix.
+	MarshalBinary() ([]byte, error)
+
+	// UnmarshalBinary replaces the existing address and prefix
+	// length of the prefix with data.
+	UnmarshalBinary(data []byte) error
+
 	// MarshalText returns the UTF-8-encoded text form of the
 	// prefix.
 	MarshalText() ([]byte, error)

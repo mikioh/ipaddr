@@ -9,8 +9,15 @@ package ipaddr
 import "encoding"
 
 var (
+	_ encoding.BinaryMarshaler   = &IPv4{}
+	_ encoding.BinaryUnmarshaler = &IPv4{}
+
+	_ encoding.BinaryMarshaler   = &IPv6{}
+	_ encoding.BinaryUnmarshaler = &IPv6{}
+
 	_ encoding.TextMarshaler   = &IPv4{}
 	_ encoding.TextUnmarshaler = &IPv4{}
+
 	_ encoding.TextMarshaler   = &IPv6{}
 	_ encoding.TextUnmarshaler = &IPv6{}
 )

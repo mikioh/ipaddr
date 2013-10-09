@@ -283,6 +283,21 @@ func (p *IPv4) Set(ip net.IP, nbits int) error {
 	return errInvalidArgument
 }
 
+// MarshalBinary implements the MarshalBinary method of
+// encoding.BinaryMarshaler interface.
+func (p *IPv4) MarshalBinary() ([]byte, error) {
+	var b [1 + net.IPv4len]byte
+	n := p.addr.encodeNLRI(b[:], p.nbits)
+	return b[:n], nil
+}
+
+// UnmarshalBinary implements the UnmarshalBinary method of
+// encoding.BinaryUnmarshaler interface.
+func (p *IPv4) UnmarshalBinary(data []byte) error {
+	*p = *nlriToIPv4(data)
+	return nil
+}
+
 // MarshalText implements the MarshalText method of
 // encoding.TextMarshaler interface.
 func (p *IPv4) MarshalText() ([]byte, error) {

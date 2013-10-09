@@ -435,7 +435,44 @@ func TestSet(t *testing.T) {
 	}
 }
 
-var textMarshalerTests = []struct {
+var binaryMarshalerUnmarshalerTests = []struct {
+	addr      net.IP
+	prefixLen int
+	out       []byte
+}{
+	{net.ParseIP("192.0.0.0"), 7, []byte{7, 192}},
+	{net.ParseIP("192.168.0.0"), 23, []byte{23, 192, 168, 0}},
+
+	{net.ParseIP("2001::"), 8, []byte{8, 0x20}},
+	{net.ParseIP("2001:db8:0:cafe:babe::"), 66, []byte{66, 0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0xca, 0xfe, 0x80}},
+	{net.ParseIP("2001:db8:0:cafe:babe::3"), 127, []byte{127, 0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0xca, 0xfe, 0xba, 0xbe, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02}},
+}
+
+func TestBinaryMarshalerUnmarshaler(t *testing.T) {
+	for _, tt := range binaryMarshalerUnmarshalerTests {
+		p1, err := ipaddr.NewPrefix(tt.addr, tt.prefixLen)
+		if err != nil {
+			t.Fatalf("ipaddr.NewPrefix failed: %v", err)
+		}
+		out, err := p1.MarshalBinary()
+		if err != nil {
+			t.Fatalf("ipaddr.Prefix.MarshalBinary failed: %v", err)
+		} else if !reflect.DeepEqual(out, tt.out) {
+			t.Fatalf("got %#v; expected %#v", out, tt.out)
+		}
+		p2, err := ipaddr.NewPrefix(tt.addr, 0)
+		if err != nil {
+			t.Fatalf("ipaddr.NewPrefix failed: %v", err)
+		}
+		if err := p2.UnmarshalBinary(tt.out); err != nil {
+			t.Fatalf("ipaddr.Prefix.UnmarshalBinary failed: %v", err)
+		} else if !reflect.DeepEqual(p2, p1) {
+			t.Fatalf("got %#v; expected %#v", p2, p1)
+		}
+	}
+}
+
+var textMarshalerUnmarshalerTests = []struct {
 	addr      net.IP
 	prefixLen int
 	out       []byte
@@ -445,8 +482,8 @@ var textMarshalerTests = []struct {
 	{net.ParseIP("2001:db8::cafe"), 127, []byte("2001:db8::cafe/127")},
 }
 
-func TestTextMarshaler(t *testing.T) {
-	for _, tt := range textMarshalerTests {
+func TestTextMarshalerUnmarshaler(t *testing.T) {
+	for _, tt := range textMarshalerUnmarshalerTests {
 		p1, err := ipaddr.NewPrefix(tt.addr, tt.prefixLen)
 		if err != nil {
 			t.Fatalf("ipaddr.NewPrefix failed: %v", err)
@@ -457,7 +494,7 @@ func TestTextMarshaler(t *testing.T) {
 		} else if !reflect.DeepEqual(out, tt.out) {
 			t.Fatalf("got %#v; expected %#v", out, tt.out)
 		}
-		p2, err := ipaddr.NewPrefix(tt.addr, tt.prefixLen)
+		p2, err := ipaddr.NewPrefix(tt.addr, 0)
 		if err != nil {
 			t.Fatalf("ipaddr.NewPrefix failed: %v", err)
 		}

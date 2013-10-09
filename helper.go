@@ -62,10 +62,18 @@ func (i ipv4Int) IP() net.IP {
 	return net.IP(b[:])
 }
 
-func (i ipv4Int) encodeNLRI(b []byte, nbits byte) []byte {
+func (i ipv4Int) encodeNLRI(b []byte, nbits byte) int {
+	l := int(nbits) / 8
+	if nbits%8 > 0 {
+		l++
+	}
 	b[0] = nbits
-	binary.BigEndian.PutUint32(b[1:5], uint32(i))
-	return b[:5]
+	l++
+	b = b[1:]
+	for n := 0; n < l; n++ {
+		b[n] = byte(i >> uint(32-8*(n+1)))
+	}
+	return l
 }
 
 func ipToIPv4Int(ip []byte) ipv4Int {
@@ -73,7 +81,13 @@ func ipToIPv4Int(ip []byte) ipv4Int {
 }
 
 func nlriToIPv4(b []byte) *IPv4 {
-	return &IPv4{nbits: b[0], addr: ipv4Int(binary.BigEndian.Uint32(b[1:5]))}
+	p := &IPv4{nbits: b[0]}
+	l := len(b) - 1
+	b = b[1:]
+	for n := 0; n < l; n++ {
+		p.addr |= ipv4Int(b[n]) << uint(32-8*(n+1))
+	}
+	return p
 }
 
 type ipv6Int [2]uint64
@@ -120,11 +134,23 @@ func (i *ipv6Int) IP() net.IP {
 	return net.IP(b[:])
 }
 
-func (i *ipv6Int) encodeNLRI(b []byte, nbits byte) []byte {
+func (i *ipv6Int) encodeNLRI(b []byte, nbits byte) int {
+	l := int(nbits) / 8
+	if nbits%8 > 0 {
+		l++
+	}
 	b[0] = nbits
-	binary.BigEndian.PutUint64(b[1:9], i[0])
-	binary.BigEndian.PutUint64(b[9:17], i[1])
-	return b[:17]
+	l++
+	b = b[1:]
+	for n := 0; n < l; n++ {
+		switch {
+		case n < 8:
+			b[n] = byte(i[0] >> uint(64-(8*(n+1))))
+		case n >= 8 && n < 16:
+			b[n] = byte(i[1] >> uint(128-(8*(n+1))))
+		}
+	}
+	return l
 }
 
 func ipToIPv6Int(ip []byte) ipv6Int {
@@ -132,5 +158,16 @@ func ipToIPv6Int(ip []byte) ipv6Int {
 }
 
 func nlriToIPv6(b []byte) *IPv6 {
-	return &IPv6{nbits: b[0], addr: ipv6Int{binary.BigEndian.Uint64(b[1:9]), binary.BigEndian.Uint64(b[9:17])}}
+	p := &IPv6{nbits: b[0]}
+	l := len(b) - 1
+	b = b[1:]
+	for n := 0; n < l; n++ {
+		switch {
+		case n < 8:
+			p.addr[0] |= uint64(b[n]) << uint(64-8*(n+1))
+		case n >= 8 && n < 16:
+			p.addr[1] |= uint64(b[n]) << uint(128-8*(n+1))
+		}
+	}
+	return p
 }
