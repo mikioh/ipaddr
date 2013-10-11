@@ -76,18 +76,18 @@ func (i ipv4Int) encodeNLRI(b []byte, nbits byte) int {
 	return l
 }
 
-func ipToIPv4Int(ip []byte) ipv4Int {
-	return ipv4Int(binary.BigEndian.Uint32(ip))
-}
-
-func nlriToIPv4(b []byte) *IPv4 {
-	p := &IPv4{nbits: b[0]}
+func (p *IPv4) decodeNLRI(b []byte) error {
+	p.nbits = b[0]
 	l := len(b) - 1
 	b = b[1:]
 	for n := 0; n < l; n++ {
 		p.addr |= ipv4Int(b[n]) << uint(32-8*(n+1))
 	}
-	return p
+	return nil
+}
+
+func ipToIPv4Int(ip []byte) ipv4Int {
+	return ipv4Int(binary.BigEndian.Uint32(ip))
 }
 
 type ipv6Int [2]uint64
@@ -153,12 +153,8 @@ func (i *ipv6Int) encodeNLRI(b []byte, nbits byte) int {
 	return l
 }
 
-func ipToIPv6Int(ip []byte) ipv6Int {
-	return ipv6Int{binary.BigEndian.Uint64(ip[:8]), binary.BigEndian.Uint64(ip[8:16])}
-}
-
-func nlriToIPv6(b []byte) *IPv6 {
-	p := &IPv6{nbits: b[0]}
+func (p *IPv6) decodeNLRI(b []byte) error {
+	p.nbits = b[0]
 	l := len(b) - 1
 	b = b[1:]
 	for n := 0; n < l; n++ {
@@ -169,5 +165,9 @@ func nlriToIPv6(b []byte) *IPv6 {
 			p.addr[1] |= uint64(b[n]) << uint(128-8*(n+1))
 		}
 	}
-	return p
+	return nil
+}
+
+func ipToIPv6Int(ip []byte) ipv6Int {
+	return ipv6Int{binary.BigEndian.Uint64(ip[:8]), binary.BigEndian.Uint64(ip[8:16])}
 }

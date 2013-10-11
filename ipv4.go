@@ -294,8 +294,7 @@ func (p *IPv4) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary implements the UnmarshalBinary method of
 // encoding.BinaryUnmarshaler interface.
 func (p *IPv4) UnmarshalBinary(data []byte) error {
-	*p = *nlriToIPv4(data)
-	return nil
+	return p.decodeNLRI(data)
 }
 
 // MarshalText implements the MarshalText method of
