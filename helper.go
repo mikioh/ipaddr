@@ -146,7 +146,7 @@ func (i *ipv6Int) encodeNLRI(b []byte, nbits byte) int {
 		switch {
 		case n < 8:
 			b[n] = byte(i[0] >> uint(64-(8*(n+1))))
-		case n >= 8 && n < 16:
+		case 8 <= n && n < 16:
 			b[n] = byte(i[1] >> uint(128-(8*(n+1))))
 		}
 	}
@@ -161,7 +161,7 @@ func (p *IPv6) decodeNLRI(b []byte) error {
 		switch {
 		case n < 8:
 			p.addr[0] |= uint64(b[n]) << uint(64-8*(n+1))
-		case n >= 8 && n < 16:
+		case 8 <= n && n < 16:
 			p.addr[1] |= uint64(b[n]) << uint(128-8*(n+1))
 		}
 	}
