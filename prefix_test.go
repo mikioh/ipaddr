@@ -440,9 +440,11 @@ var binaryMarshalerUnmarshalerTests = []struct {
 	prefixLen int
 	out       []byte
 }{
+	{net.ParseIP("0.0.0.0"), 0, []byte{0}},
 	{net.ParseIP("192.0.0.0"), 7, []byte{7, 192}},
 	{net.ParseIP("192.168.0.0"), 23, []byte{23, 192, 168, 0}},
 
+	{net.ParseIP("::"), 0, []byte{0}},
 	{net.ParseIP("2001::"), 8, []byte{8, 0x20}},
 	{net.ParseIP("2001:db8:0:cafe:babe::"), 66, []byte{66, 0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0xca, 0xfe, 0x80}},
 	{net.ParseIP("2001:db8:0:cafe:babe::3"), 127, []byte{127, 0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0xca, 0xfe, 0xba, 0xbe, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02}},
