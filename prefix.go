@@ -5,6 +5,24 @@
 // Package ipaddr provides basic functions for the manipulation of IP
 // address prefixes and subsequent addresses as described in RFC 4632
 // and RFC 4291.
+//
+// Basic examples:
+//
+//	_, ipn, err := net.ParseCIDR("127.0.0.1/8")
+//	if err != nil {
+//		// error handling
+//	}
+//	nbits, _ := ipn.Mask.Size()
+//	p, err := ipaddr.NewPrefix(ipn.IP, nbits)
+//	if err != nil {
+//		// error handling
+//	}
+//	fmt.Println(p.Addr(), p.LastAddr(), p.Len(), p.Netmask(), p.Hostmask())
+//	subs := p.Subnets(3)
+//	for _, sub := range subs {
+//		fmt.Println(sub)
+//	}
+//	fmt.Println(ipaddr.SummaryPrefix(subs[4:6]))
 package ipaddr
 
 import (
