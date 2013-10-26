@@ -5,6 +5,7 @@
 package ipaddr
 
 import (
+	//"encoding"
 	"fmt"
 	"math/big"
 	"net"
@@ -14,6 +15,10 @@ import (
 var (
 	_ Prefix       = &IPv4{}
 	_ fmt.Stringer = &IPv4{}
+	//_ encoding.BinaryMarshaler   = &IPv4{}
+	//_ encoding.BinaryUnmarshaler = &IPv4{}
+	//_ encoding.TextMarshaler     = &IPv4{}
+	//_ encoding.TextUnmarshaler   = &IPv4{}
 )
 
 // Maximum length of IPv4 address prefix in bits.
