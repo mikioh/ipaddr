@@ -114,7 +114,7 @@ func (p *IPv4) Bits(pos, nbits int) uint32 {
 	if 0 > pos || pos > IPv4PrefixLen-1 || 0 > nbits || nbits > 32 {
 		return 0
 	}
-	return uint32((p.addr << uint(pos)) >> uint(IPv4PrefixLen-nbits))
+	return uint32(p.addr << uint(pos) >> uint(IPv4PrefixLen-nbits))
 }
 
 // Addr implements the Addr method of ipaddr.Prefix interface.
