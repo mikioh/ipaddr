@@ -143,11 +143,11 @@ func NewPrefix(ip net.IP, nbits int) (Prefix, error) {
 // ComparePrefix returns an integer comparing two prefixes. The result
 // will be 0 if a == b, -1 if a < b, and +1 if a > b.
 func ComparePrefix(a, b Prefix) int {
-	switch a.(type) {
+	switch a := a.(type) {
 	case *IPv4:
-		return ipv4ComparePrefix(a.(*IPv4), b.(*IPv4))
+		return a.compare(b.(*IPv4))
 	case *IPv6:
-		return ipv6ComparePrefix(a.(*IPv6), b.(*IPv6))
+		return a.compare(b.(*IPv6))
 	default:
 		panic("unknown address family")
 	}

@@ -325,6 +325,25 @@ func (p *IPv6) UnmarshalText(text []byte) error {
 	return p.Set(ipn.IP, nbits)
 }
 
+func (a *IPv6) compare(b *IPv6) int {
+	if a.addr[0] < b.addr[0] {
+		return -1
+	} else if a.addr[0] > b.addr[0] {
+		return +1
+	}
+	if a.addr[1] < b.addr[1] {
+		return -1
+	} else if a.addr[1] > b.addr[1] {
+		return +1
+	}
+	if a.nbits < b.nbits {
+		return -1
+	} else if a.nbits > b.nbits {
+		return +1
+	}
+	return 0
+}
+
 func newIPv6(i ipv6Int, nbits byte) *IPv6 {
 	p := &IPv6{}
 	p.set(i, nbits)
@@ -390,25 +409,6 @@ loop:
 		case iter.ch <- newIPv6(iter.cur, nbits):
 		}
 	}
-}
-
-func ipv6ComparePrefix(a, b *IPv6) int {
-	if a.addr[0] < b.addr[0] {
-		return -1
-	} else if a.addr[0] > b.addr[0] {
-		return +1
-	}
-	if a.addr[1] < b.addr[1] {
-		return -1
-	} else if a.addr[1] > b.addr[1] {
-		return +1
-	}
-	if a.nbits < b.nbits {
-		return -1
-	} else if a.nbits > b.nbits {
-		return +1
-	}
-	return 0
 }
 
 func ipv6SummaryPrefix(subs []Prefix) *IPv6 {

@@ -320,6 +320,20 @@ func (p *IPv4) UnmarshalText(text []byte) error {
 	return p.Set(ipn.IP, nbits)
 }
 
+func (a *IPv4) compare(b *IPv4) int {
+	if a.addr < b.addr {
+		return -1
+	} else if a.addr > b.addr {
+		return +1
+	}
+	if a.nbits < b.nbits {
+		return -1
+	} else if a.nbits > b.nbits {
+		return +1
+	}
+	return 0
+}
+
 func newIPv4(i ipv4Int, nbits byte) *IPv4 {
 	p := &IPv4{}
 	p.set(i, nbits)
@@ -384,20 +398,6 @@ loop:
 		case iter.ch <- newIPv4(iter.cur, nbits):
 		}
 	}
-}
-
-func ipv4ComparePrefix(a, b *IPv4) int {
-	if a.addr < b.addr {
-		return -1
-	} else if a.addr > b.addr {
-		return +1
-	}
-	if a.nbits < b.nbits {
-		return -1
-	} else if a.nbits > b.nbits {
-		return +1
-	}
-	return 0
 }
 
 func ipv4SummaryPrefix(subs []Prefix) *IPv4 {
