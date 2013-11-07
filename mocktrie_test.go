@@ -49,7 +49,7 @@ func (n ipv4Node) index() int {
 }
 
 func (n ipv4Node) bits(pos, nbits int) uint32 {
-	return (uint32(n) << uint(pos)) >> uint(ipaddr.IPv4PrefixLen-nbits)
+	return uint32(n) << uint(pos) >> uint(ipaddr.IPv4PrefixLen-nbits)
 }
 
 func newIPv4Node(f, n, i int) ipv4Node {
