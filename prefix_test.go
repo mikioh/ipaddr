@@ -508,7 +508,7 @@ func TestTextMarshalerUnmarshaler(t *testing.T) {
 	}
 }
 
-var comparePrefixTests = []struct {
+var compareTests = []struct {
 	prefixes []string
 	ncmp     int
 }{
@@ -529,8 +529,8 @@ var comparePrefixTests = []struct {
 	{[]string{"2001:db8:1::2/128", "2001:db8:1::1/128"}, +1},
 }
 
-func TestComparePrefix(t *testing.T) {
-	for i, tt := range comparePrefixTests {
+func TestCompare(t *testing.T) {
+	for i, tt := range compareTests {
 		var nn []*net.IPNet
 		for _, s := range tt.prefixes {
 			_, n, err := net.ParseCIDR(s)
@@ -548,7 +548,7 @@ func TestComparePrefix(t *testing.T) {
 			}
 			ps = append(ps, p)
 		}
-		if n := ipaddr.ComparePrefix(ps[0], ps[1]); n != tt.ncmp {
+		if n := ipaddr.Compare(ps[0], ps[1]); n != tt.ncmp {
 			t.Fatalf("#%v: got %v; expected %v", i, n, tt.ncmp)
 		}
 	}

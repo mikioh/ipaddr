@@ -69,7 +69,7 @@ func (ps byAddress) Len() int {
 }
 
 func (ps byAddress) Less(i, j int) bool {
-	if ipaddr.ComparePrefix(ps[i], ps[j]) < 0 {
+	if ipaddr.Compare(ps[i], ps[j]) < 0 {
 		return true
 	}
 	return false
@@ -91,7 +91,7 @@ func (ps byPrefixLen) Less(i, j int) bool {
 	} else if ps[i].Len() > ps[j].Len() {
 		return false
 	}
-	if ipaddr.ComparePrefix(ps[i], ps[j]) < 0 {
+	if ipaddr.Compare(ps[i], ps[j]) < 0 {
 		return true
 	}
 	return false

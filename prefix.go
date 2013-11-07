@@ -140,9 +140,9 @@ func NewPrefix(ip net.IP, nbits int) (Prefix, error) {
 	return nil, errInvalidArgument
 }
 
-// ComparePrefix returns an integer comparing two prefixes. The result
-// will be 0 if a == b, -1 if a < b, and +1 if a > b.
-func ComparePrefix(a, b Prefix) int {
+// Compare returns an integer comparing two prefixes. The result will
+// be 0 if a == b, -1 if a < b, and +1 if a > b.
+func Compare(a, b Prefix) int {
 	switch a := a.(type) {
 	case *IPv4:
 		return a.compare(b.(*IPv4))

@@ -115,7 +115,7 @@ func BenchmarkIPv6UnmarshalText(b *testing.B) {
 	}
 }
 
-func BenchmarkIPv6ComparePrefix(b *testing.B) {
+func BenchmarkIPv6Compare(b *testing.B) {
 	p1, err := ipaddr.NewPrefix(net.ParseIP("2001:db8:f001:f002::"), 64)
 	if err != nil {
 		b.Fatalf("ipaddr.NewPrefix failed: %v", err)
@@ -125,7 +125,7 @@ func BenchmarkIPv6ComparePrefix(b *testing.B) {
 		b.Fatalf("ipaddr.NewPrefix failed: %v", err)
 	}
 	for i := 0; i < b.N; i++ {
-		ipaddr.ComparePrefix(p1, p2)
+		ipaddr.Compare(p1, p2)
 	}
 }
 

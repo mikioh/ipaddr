@@ -114,7 +114,7 @@ func BenchmarkIPv4UnmarshalText(b *testing.B) {
 	}
 }
 
-func BenchmarkIPv4ComparePrefix(b *testing.B) {
+func BenchmarkIPv4Compare(b *testing.B) {
 	p1, err := ipaddr.NewPrefix(net.ParseIP("192.168.1.0"), 24)
 	if err != nil {
 		b.Fatalf("ipaddr.NewPrefix failed: %v", err)
@@ -124,7 +124,7 @@ func BenchmarkIPv4ComparePrefix(b *testing.B) {
 		b.Fatalf("ipaddr.NewPrefix failed: %v", err)
 	}
 	for i := 0; i < b.N; i++ {
-		ipaddr.ComparePrefix(p1, p2)
+		ipaddr.Compare(p1, p2)
 	}
 }
 

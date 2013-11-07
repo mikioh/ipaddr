@@ -15,7 +15,7 @@ import (
 type prefixHeap []ipaddr.Prefix
 
 func (h *prefixHeap) Less(i, j int) bool {
-	return ipaddr.ComparePrefix((*h)[i], (*h)[j]) < 0
+	return ipaddr.Compare((*h)[i], (*h)[j]) < 0
 }
 
 func (h *prefixHeap) Swap(i, j int) {
