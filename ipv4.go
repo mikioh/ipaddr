@@ -400,7 +400,7 @@ loop:
 	}
 }
 
-func ipv4SummaryPrefix(subs []Prefix) *IPv4 {
+func ipv4CommonParent(subs []Prefix) *IPv4 {
 	m := ipv4Int(mask32(subs[0].(*IPv4).nbits))
 	base := subs[0].(*IPv4).addr & m
 	nbits := subs[0].(*IPv4).nbits

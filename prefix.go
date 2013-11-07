@@ -22,7 +22,7 @@
 //	for _, sub := range subs {
 //		fmt.Println(sub)
 //	}
-//	fmt.Println(ipaddr.SummaryPrefix(subs[4:6]))
+//	fmt.Println(ipaddr.CommonParent(subs[4:6]))
 package ipaddr
 
 import (
@@ -153,9 +153,9 @@ func Compare(a, b Prefix) int {
 	}
 }
 
-// SummaryPrefix tries to find out a shortest common prefix for the
+// CommonParent tries to find out a shortest common prefix for the
 // given prefixes. It returns nil when no suitable prefix is found.
-func SummaryPrefix(prefixes []Prefix) Prefix {
+func CommonParent(prefixes []Prefix) Prefix {
 	if len(prefixes) == 0 {
 		return nil
 	} else if len(prefixes) == 1 {
@@ -163,13 +163,13 @@ func SummaryPrefix(prefixes []Prefix) Prefix {
 	}
 	switch prefixes[0].(type) {
 	case *IPv4:
-		p := ipv4SummaryPrefix(prefixes)
+		p := ipv4CommonParent(prefixes)
 		if p == nil {
 			return nil
 		}
 		return p
 	case *IPv6:
-		p := ipv6SummaryPrefix(prefixes)
+		p := ipv6CommonParent(prefixes)
 		if p == nil {
 			return nil
 		}

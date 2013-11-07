@@ -411,7 +411,7 @@ loop:
 	}
 }
 
-func ipv6SummaryPrefix(subs []Prefix) *IPv6 {
+func ipv6CommonParent(subs []Prefix) *IPv6 {
 	var base, m, diff ipv6Int
 	m.setNetmask(subs[0].(*IPv6).nbits)
 	base[0], base[1] = subs[0].(*IPv6).addr[0]&m[0], subs[0].(*IPv6).addr[1]&m[1]

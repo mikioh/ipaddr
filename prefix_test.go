@@ -77,7 +77,7 @@ func TestOverlaps(t *testing.T) {
 			}
 			others = append(others, p)
 		}
-		p2 := ipaddr.SummaryPrefix(others)
+		p2 := ipaddr.CommonParent(others)
 		if ok := p1.Overlaps(p2); ok != tt.ok {
 			t.Fatalf("#%v: got %v; expected %v", i, ok, tt.ok)
 		}
@@ -304,7 +304,7 @@ func TestSubnets(t *testing.T) {
 				t.Errorf("%v: got %v; expected %v", p, s.Len(), tt.prefixLen+tt.nbits)
 			}
 		}
-		if sum := ipaddr.SummaryPrefix(subs); sum == nil {
+		if sum := ipaddr.CommonParent(subs); sum == nil {
 			for _, s := range subs {
 				t.Logf("subnet: %v", s)
 			}
@@ -554,7 +554,7 @@ func TestCompare(t *testing.T) {
 	}
 }
 
-var summaryPrefixTests = []struct {
+var commonParentTests = []struct {
 	subs []string
 	ok   bool
 }{
@@ -571,8 +571,8 @@ var summaryPrefixTests = []struct {
 	{[]string{"8001:db8:1::/34", "2013:db8:2::/32"}, false},
 }
 
-func TestSummaryPrefix(t *testing.T) {
-	for i, tt := range summaryPrefixTests {
+func TestCommonParent(t *testing.T) {
+	for i, tt := range commonParentTests {
 		var nn []*net.IPNet
 		for _, s := range tt.subs {
 			_, n, err := net.ParseCIDR(s)
@@ -590,7 +590,7 @@ func TestSummaryPrefix(t *testing.T) {
 			}
 			subs = append(subs, p)
 		}
-		sum := ipaddr.SummaryPrefix(subs)
+		sum := ipaddr.CommonParent(subs)
 		if sum == nil && tt.ok || sum != nil && !tt.ok {
 			t.Fatalf("#%v: got %v, %v; expected %v", i, sum, sum != nil, tt.ok)
 		}

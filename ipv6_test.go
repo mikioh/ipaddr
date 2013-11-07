@@ -129,7 +129,7 @@ func BenchmarkIPv6Compare(b *testing.B) {
 	}
 }
 
-func BenchmarkIPv6SummaryPrefix(b *testing.B) {
+func BenchmarkIPv6CommonParent(b *testing.B) {
 	var nn []*net.IPNet
 	for _, ns := range []string{"2001:db8:f001:a::/64", "2001:db8:f002:b::/64", "2001:db8:f003:c::/64"} {
 		_, n, err := net.ParseCIDR(ns)
@@ -148,6 +148,6 @@ func BenchmarkIPv6SummaryPrefix(b *testing.B) {
 		subs = append(subs, p)
 	}
 	for i := 0; i < b.N; i++ {
-		ipaddr.SummaryPrefix(subs)
+		ipaddr.CommonParent(subs)
 	}
 }

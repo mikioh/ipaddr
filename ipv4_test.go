@@ -128,7 +128,7 @@ func BenchmarkIPv4Compare(b *testing.B) {
 	}
 }
 
-func BenchmarkIPv4SummaryPrefix(b *testing.B) {
+func BenchmarkIPv4CommonParent(b *testing.B) {
 	var nn []*net.IPNet
 	for _, ns := range []string{"172.16.141.0/24", "172.16.142.0/24", "172.16.143.0/24"} {
 		_, n, err := net.ParseCIDR(ns)
@@ -147,6 +147,6 @@ func BenchmarkIPv4SummaryPrefix(b *testing.B) {
 		subs = append(subs, p)
 	}
 	for i := 0; i < b.N; i++ {
-		ipaddr.SummaryPrefix(subs)
+		ipaddr.CommonParent(subs)
 	}
 }
