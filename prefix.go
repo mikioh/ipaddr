@@ -163,13 +163,13 @@ func CommonParent(prefixes []Prefix) Prefix {
 	}
 	switch prefixes[0].(type) {
 	case *IPv4:
-		p := ipv4CommonParent(prefixes)
+		p := commonParentIPv4(prefixes)
 		if p == nil {
 			return nil
 		}
 		return p
 	case *IPv6:
-		p := ipv6CommonParent(prefixes)
+		p := commonParentIPv6(prefixes)
 		if p == nil {
 			return nil
 		}
