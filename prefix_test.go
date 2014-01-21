@@ -142,7 +142,7 @@ var addrTests = []struct {
 	{net.ParseIP("192.168.255.255"), 16, net.ParseIP("192.168.0.0"), net.ParseIP("192.168.255.255")},
 	{net.ParseIP("192.168.0.255"), 24, net.ParseIP("192.168.0.0"), net.ParseIP("192.168.0.255")},
 
-	{net.ParseIP("2001:db8:0:0:1:2:3::cafe"), 64, net.ParseIP("2001:db8::"), net.ParseIP("2001:db8::ffff:ffff:ffff:ffff")},
+	{net.ParseIP("2001:db8:0:0:1:2:3:cafe"), 64, net.ParseIP("2001:db8::"), net.ParseIP("2001:db8::ffff:ffff:ffff:ffff")},
 	{net.ParseIP("2001:db8::ca7e"), 121, net.ParseIP("2001:db8::ca00"), net.ParseIP("2001:db8::ca7f")},
 }
 
@@ -208,11 +208,11 @@ var hostsTests = []struct {
 	{net.ParseIP("192.168.1.0"), 24, net.ParseIP("192.168.1.255"), 0},
 	{net.ParseIP("192.168.1.0"), 24, net.ParseIP("192.168.2.0"), 0},
 
-	{net.ParseIP("2001:db8:f001:f002::"), 64, net.ParseIP("2001:db8:f001:f002::ffff:ffff:ffff:fffe"), 2},
+	{net.ParseIP("2001:db8:f001:f002::"), 64, net.ParseIP("2001:db8:f001:f002:ffff:ffff:ffff:fffe"), 2},
 	{net.ParseIP("2001:db8:f001:f002::"), 126, net.ParseIP("2001:db8:f001:f002::"), 3},
 	{net.ParseIP("2001:db8:f001:f002::"), 126, net.ParseIP("2001:db8:f001:f002::1"), 3},
 	{net.ParseIP("2001:db8:f001:f002::"), 126, net.ParseIP("2001:db8:f001:f003::"), 0},
-	{net.ParseIP("2001:db8:f001:f002::"), 64, net.ParseIP("2001:db8:f001:f002::ffff:ffff:ffff:ffff"), 1},
+	{net.ParseIP("2001:db8:f001:f002::"), 64, net.ParseIP("2001:db8:f001:f002:ffff:ffff:ffff:ffff"), 1},
 }
 
 func TestHosts(t *testing.T) {
