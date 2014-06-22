@@ -5,7 +5,7 @@
 package ipaddr
 
 import (
-	//"encoding"
+	"encoding"
 	"fmt"
 	"math/big"
 	"net"
@@ -13,12 +13,12 @@ import (
 )
 
 var (
-	_ Prefix       = &IPv6{}
-	_ fmt.Stringer = &IPv6{}
-	//_ encoding.BinaryMarshaler   = &IPv6{}
-	//_ encoding.BinaryUnmarshaler = &IPv6{}
-	//_ encoding.TextMarshaler     = &IPv6{}
-	//_ encoding.TextUnmarshaler   = &IPv6{}
+	_ Prefix                     = &IPv6{}
+	_ fmt.Stringer               = &IPv6{}
+	_ encoding.BinaryMarshaler   = &IPv6{}
+	_ encoding.BinaryUnmarshaler = &IPv6{}
+	_ encoding.TextMarshaler     = &IPv6{}
+	_ encoding.TextUnmarshaler   = &IPv6{}
 )
 
 // Maximum length of IPv6 address prefix in bits.
