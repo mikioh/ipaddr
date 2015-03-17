@@ -348,7 +348,6 @@ type ipv4HostIter struct {
 
 func (iter *ipv4HostIter) run() {
 	defer close(iter.ch)
-	var idleTimeout <-chan time.Time
 loop:
 	for iter.p.contains(iter.cur) {
 		if _, eor := iter.p.isHostAssignable(iter.cur); eor {
@@ -358,11 +357,13 @@ loop:
 		if ok, _ := iter.p.isHostAssignable(iter.cur); !ok {
 			continue
 		}
-		idleTimeout = time.After(1 * time.Second)
+		tmo := time.NewTimer(1 * time.Second)
 		select {
-		case <-idleTimeout:
+		case <-tmo.C:
+			tmo.Stop()
 			break loop
 		case iter.ch <- iter.cur.IP():
+			tmo.Stop()
 		}
 	}
 }
@@ -382,7 +383,6 @@ func (iter *ipv4SubnetIter) run() {
 	}
 	m := ipv4Int(^mask32(iter.p.nbits + iter.nbits))
 	nbits := iter.p.nbits + iter.nbits
-	var idleTimeout <-chan time.Time
 loop:
 	for !iter.p.isLimitedBroadcastAddr(iter.cur) && !iter.p.isBroadcastAddr(iter.cur|m) {
 		if !iter.passed {
@@ -391,11 +391,13 @@ loop:
 			iter.cur |= m
 			iter.cur++
 		}
-		idleTimeout = time.After(1 * time.Second)
+		tmo := time.NewTimer(1 * time.Second)
 		select {
-		case <-idleTimeout:
+		case <-tmo.C:
+			tmo.Stop()
 			break loop
 		case iter.ch <- newIPv4(iter.cur, nbits):
+			tmo.Stop()
 		}
 	}
 }
