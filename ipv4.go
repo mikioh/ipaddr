@@ -26,7 +26,7 @@ const IPv4PrefixLen = 8 * net.IPv4len
 
 // An IPv4 represents an IPv4 address prefix.
 type IPv4 struct {
-	nbits byte    // prefix length
+	nbits int     // prefix length
 	addr  ipv4Int // address
 }
 
@@ -100,7 +100,7 @@ func (p *IPv4) String() string {
 
 // Len implements the Len method of ipaddr.Prefix interface.
 func (p *IPv4) Len() int {
-	return int(p.nbits)
+	return p.nbits
 }
 
 // NumAddr implements the NumAddr method of ipaddr.Prefix interface.
@@ -150,7 +150,7 @@ func (p *IPv4) Hostmask() net.IPMask {
 
 // Netmask implements the Netmask method of ipaddr.Prefix interface.
 func (p *IPv4) Netmask() net.IPMask {
-	return net.CIDRMask(int(p.nbits), IPv4PrefixLen)
+	return net.CIDRMask(p.nbits, IPv4PrefixLen)
 }
 
 // Hosts implements the Hosts method of ipaddr.Prefix interface.
@@ -203,15 +203,15 @@ func (p *IPv4) HostIter(first net.IP) <-chan net.IP {
 
 // Subnets implements the Subnets method of ipaddr.Prefix interface.
 func (p *IPv4) Subnets(nbits int) []Prefix {
-	if nbits < 0 || p.nbits+byte(nbits) > IPv4PrefixLen {
+	if nbits < 0 || p.nbits+nbits > IPv4PrefixLen {
 		return nil
 	}
 	var subs []Prefix
 	if nbits < 17 { // don't bother runtime.makeslice by big number
 		subs = make([]Prefix, 1<<uint(nbits))
-		off := uint(IPv4PrefixLen - p.nbits - byte(nbits))
+		off := uint(IPv4PrefixLen - p.nbits - nbits)
 		for i := range subs {
-			subs[i] = newIPv4(p.addr|ipv4Int(i<<off), p.nbits+byte(nbits))
+			subs[i] = newIPv4(p.addr|ipv4Int(i<<off), p.nbits+nbits)
 		}
 		return subs
 	}
@@ -226,16 +226,12 @@ func (p *IPv4) Subnets(nbits int) []Prefix {
 func (p *IPv4) SubnetIter(nbits int) <-chan Prefix {
 	iter := &ipv4SubnetIter{
 		p:     IPv4{addr: p.addr, nbits: p.nbits},
-		nbits: byte(nbits),
+		nbits: nbits,
 		cur:   p.addr,
 		ch:    make(chan Prefix, 1),
 	}
 	go iter.run()
 	return iter.ch
-}
-
-func (p *IPv4) chopup() (IPv4, IPv4) {
-	return IPv4{addr: p.addr, nbits: p.nbits + 1}, IPv4{addr: p.addr | ipv4Int(1<<uint(IPv4PrefixLen-p.nbits-1)), nbits: p.nbits + 1}
 }
 
 // Exclude implements the Exclude method of ipaddr.Prefix interface.
@@ -255,14 +251,14 @@ func (p *IPv4) Exclude(prefix Prefix) []Prefix {
 		return nil
 	}
 	var subs []Prefix
-	l, r := p.chopup()
+	l, r := p.descend(1)
 	for !l.Equal(&x) && !r.Equal(&x) {
 		if l.contains(x.addr) {
 			subs = append(subs, newIPv4(r.addr, r.nbits))
-			l, r = l.chopup()
+			l, r = l.descend(1)
 		} else if r.contains(x.addr) {
 			subs = append(subs, newIPv4(l.addr, l.nbits))
-			l, r = r.chopup()
+			l, r = r.descend(1)
 		} else {
 			panic("got lost in the ipv4 forest")
 		}
@@ -273,16 +269,20 @@ func (p *IPv4) Exclude(prefix Prefix) []Prefix {
 		subs = append(subs, newIPv4(l.addr, l.nbits))
 	}
 	return subs
+
+}
+func (p *IPv4) descend(nbits int) (IPv4, IPv4) {
+	return IPv4{addr: p.addr, nbits: p.nbits + nbits}, IPv4{addr: p.addr | ipv4Int(1<<uint(IPv4PrefixLen-p.nbits-1)), nbits: p.nbits + nbits}
 }
 
-func (p *IPv4) set(i ipv4Int, nbits byte) {
+func (p *IPv4) set(i ipv4Int, nbits int) {
 	p.addr, p.nbits = i&ipv4Int(mask32(nbits)), nbits
 }
 
 // Set implements the Set method of ipaddr.Prefix interface.
 func (p *IPv4) Set(ip net.IP, nbits int) error {
 	if ipv4 := ip.To4(); ipv4 != nil && 0 <= nbits && nbits <= IPv4PrefixLen {
-		p.set(ipToIPv4Int(ipv4), byte(nbits))
+		p.set(ipToIPv4Int(ipv4), nbits)
 		return nil
 	}
 	return errInvalidArgument
@@ -334,7 +334,7 @@ func (a *IPv4) compare(b *IPv4) int {
 	return 0
 }
 
-func newIPv4(i ipv4Int, nbits byte) *IPv4 {
+func newIPv4(i ipv4Int, nbits int) *IPv4 {
 	p := &IPv4{}
 	p.set(i, nbits)
 	return p
@@ -348,10 +348,9 @@ type ipv4HostIter struct {
 
 func (iter *ipv4HostIter) run() {
 	defer close(iter.ch)
-loop:
 	for iter.p.contains(iter.cur) {
 		if _, eor := iter.p.isHostAssignable(iter.cur); eor {
-			break
+			return
 		}
 		iter.cur++
 		if ok, _ := iter.p.isHostAssignable(iter.cur); !ok {
@@ -361,7 +360,7 @@ loop:
 		select {
 		case <-tmo.C:
 			tmo.Stop()
-			break loop
+			return
 		case iter.ch <- iter.cur.IP():
 			tmo.Stop()
 		}
@@ -370,7 +369,7 @@ loop:
 
 type ipv4SubnetIter struct {
 	p      IPv4
-	nbits  byte
+	nbits  int
 	cur    ipv4Int
 	passed bool
 	ch     chan Prefix
@@ -383,7 +382,6 @@ func (iter *ipv4SubnetIter) run() {
 	}
 	m := ipv4Int(^mask32(iter.p.nbits + iter.nbits))
 	nbits := iter.p.nbits + iter.nbits
-loop:
 	for !iter.p.isLimitedBroadcastAddr(iter.cur) && !iter.p.isBroadcastAddr(iter.cur|m) {
 		if !iter.passed {
 			iter.passed = true
@@ -395,19 +393,19 @@ loop:
 		select {
 		case <-tmo.C:
 			tmo.Stop()
-			break loop
+			return
 		case iter.ch <- newIPv4(iter.cur, nbits):
 			tmo.Stop()
 		}
 	}
 }
 
-func commonParentIPv4(subs []Prefix) *IPv4 {
+func supernetIPv4(subs []Prefix) Prefix {
 	m := ipv4Int(mask32(subs[0].(*IPv4).nbits))
 	base := subs[0].(*IPv4).addr & m
 	nbits := subs[0].(*IPv4).nbits
 	for _, s := range subs[1:] {
-		if diff := uint32(base ^ s.(*IPv4).addr&m); diff != 0 {
+		if diff := uint32((base ^ s.(*IPv4).addr) & m); diff != 0 {
 			if l := nlz32(diff); l < nbits {
 				nbits = l
 			}
@@ -417,4 +415,59 @@ func commonParentIPv4(subs []Prefix) *IPv4 {
 		return nil
 	}
 	return newIPv4(subs[0].(*IPv4).addr, nbits)
+}
+
+func aggregateIPv4(subs []Prefix) []Prefix {
+	var aggrs []Prefix
+	for len(subs) > 0 {
+		if subs[0].(*IPv4).nbits == 0 {
+			aggrs = append(aggrs, subs[0])
+			subs = subs[1:]
+			continue
+		}
+		bf, n := ascendIPv4(subs)
+		m := 1 << uint(bf)
+		if n < m {
+			aggrs = append(aggrs, subs[0])
+			subs = subs[1:]
+			continue
+		}
+		p := supernetIPv4(subs[:m])
+		aggrs = append(aggrs, p)
+		subs = subs[m:]
+		m = 0
+		for _, s := range subs {
+			if !p.(*IPv4).contains(s.(*IPv4).addr) {
+				break
+			}
+			m++
+		}
+		subs = subs[m:]
+	}
+	return aggrs
+}
+
+func ascendIPv4(subs []Prefix) (int, int) {
+	base := subs[0].(*IPv4)
+	m := ipv4Int(mask32(base.nbits))
+	var lastBF, lastN int
+	for bf := 1; bf < IPv4PrefixLen; bf++ {
+		n, nfull := 0, 1<<uint(bf)
+		max := ipv4Int(1 << uint(bf))
+		maggr := m << uint(bf)
+		for pat := ipv4Int(0); pat < max; pat++ {
+			aggr := base.addr&maggr | pat<<uint(IPv4PrefixLen-base.nbits)
+			for _, s := range subs {
+				if aggr^(s.(*IPv4).addr&m) == 0 {
+					n++
+				}
+			}
+		}
+		if n < nfull {
+			break
+		}
+		lastBF = bf
+		lastN = n
+	}
+	return lastBF, lastN
 }

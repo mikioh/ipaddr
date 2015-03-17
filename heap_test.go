@@ -38,7 +38,7 @@ func (h *prefixHeap) Push(v interface{}) {
 func TestPrefixHeap(t *testing.T) {
 	super, err := ipaddr.NewPrefix(net.ParseIP("2001:db8:f001::"), 48)
 	if err != nil {
-		t.Fatalf("ipaddr.NewPrefix failed: %v", err)
+		t.Fatal(err)
 	}
 	h := new(prefixHeap)
 	heap.Init(h)

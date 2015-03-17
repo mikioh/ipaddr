@@ -5,30 +5,13 @@
 // Package ipaddr provides basic functions for the manipulation of IP
 // address prefixes and subsequent addresses as described in RFC 4632
 // and RFC 4291.
-//
-// Basic examples:
-//
-//	_, ipn, err := net.ParseCIDR("127.0.0.1/8")
-//	if err != nil {
-//		// error handling
-//	}
-//	nbits, _ := ipn.Mask.Size()
-//	p, err := ipaddr.NewPrefix(ipn.IP, nbits)
-//	if err != nil {
-//		// error handling
-//	}
-//	fmt.Println(p.Addr(), p.LastAddr(), p.Len(), p.Netmask(), p.Hostmask())
-//	subs := p.Subnets(3)
-//	for _, sub := range subs {
-//		fmt.Println(sub)
-//	}
-//	fmt.Println(ipaddr.CommonParent(subs[4:6]))
 package ipaddr
 
 import (
 	"errors"
 	"math/big"
 	"net"
+	"sort"
 )
 
 var errInvalidArgument = errors.New("invalid arugument")
@@ -133,9 +116,9 @@ type Prefix interface {
 // NewPrefix returns a new Prefix.
 func NewPrefix(ip net.IP, nbits int) (Prefix, error) {
 	if ipv4 := ip.To4(); ipv4 != nil && 0 <= nbits && nbits <= IPv4PrefixLen {
-		return newIPv4(ipToIPv4Int(ipv4), byte(nbits)), nil
+		return newIPv4(ipToIPv4Int(ipv4), nbits), nil
 	} else if ipv6 := ip.To16(); ipv6 != nil && ipv6.To4() == nil && 0 <= nbits && nbits <= IPv6PrefixLen {
-		return newIPv6(ipToIPv6Int(ipv6), byte(nbits)), nil
+		return newIPv6(ipToIPv6Int(ipv6), nbits), nil
 	}
 	return nil, errInvalidArgument
 }
@@ -145,36 +128,144 @@ func NewPrefix(ip net.IP, nbits int) (Prefix, error) {
 func Compare(a, b Prefix) int {
 	switch a := a.(type) {
 	case *IPv4:
-		return a.compare(b.(*IPv4))
+		b, ok := b.(*IPv4)
+		if !ok {
+			return -1
+		}
+		return a.compare(b)
 	case *IPv6:
-		return a.compare(b.(*IPv6))
+		b, ok := b.(*IPv6)
+		if !ok {
+			return -1
+		}
+		return a.compare(b)
 	default:
-		panic("unknown address family")
+		return -1
 	}
 }
 
-// CommonParent tries to find out a shortest common prefix for the
-// given prefixes. It returns nil when no suitable prefix is found.
-func CommonParent(prefixes []Prefix) Prefix {
+// Supernet finds out a shortest common prefix for the given
+// prefixes. It returns nil when no suitable prefix is found.
+func Supernet(prefixes []Prefix) Prefix {
 	if len(prefixes) == 0 {
 		return nil
-	} else if len(prefixes) == 1 {
-		return prefixes[0]
 	}
 	switch prefixes[0].(type) {
 	case *IPv4:
-		p := commonParentIPv4(prefixes)
-		if p == nil {
+		subs := byAddrFamily(prefixes).ipv4Only()
+		if l := len(subs); l == 0 {
 			return nil
+		} else if l == 1 {
+			return subs[0]
 		}
-		return p
+		return supernetIPv4(subs)
 	case *IPv6:
-		p := commonParentIPv6(prefixes)
-		if p == nil {
+		subs := byAddrFamily(prefixes).ipv6Only()
+		if l := len(subs); l == 0 {
 			return nil
+		} else if l == 1 {
+			return subs[0]
 		}
-		return p
+		return supernetIPv6(subs)
 	default:
 		return nil
 	}
+}
+
+// Aggregate aggregates the given prefixes and returns a list of
+// aggregated prefixes.
+func Aggregate(prefixes []Prefix) []Prefix {
+	if len(prefixes) == 0 {
+		return nil
+	}
+	switch prefixes[0].(type) {
+	case *IPv4:
+		subs := sortAndDedup(prefixes)
+		if l := len(subs); l == 0 {
+			return nil
+		} else if l == 1 {
+			return subs
+		}
+		return aggregateIPv4(subs)
+	case *IPv6:
+		subs := sortAndDedup(prefixes)
+		if l := len(subs); l == 0 {
+			return nil
+		} else if l == 1 {
+			return subs
+		}
+		return aggregateIPv6(subs)
+	default:
+		return nil
+	}
+}
+
+func sortAndDedup(ps []Prefix) []Prefix {
+	switch ps[0].(type) {
+	case *IPv4:
+		ps = byAddrFamily(ps).ipv4Only()
+		sort.Sort(byAddrAndLen(ps))
+	case *IPv6:
+		ps = byAddrFamily(ps).ipv6Only()
+		sort.Sort(byAddrAndLen(ps))
+	default:
+		return nil
+	}
+	nps := ps[:0]
+	var prev Prefix
+	for _, p := range ps {
+		if prev == nil {
+			nps = append(nps, p)
+		} else if !prev.Equal(p) {
+			nps = append(nps, p)
+		}
+		prev = p
+	}
+	return nps
+}
+
+type byAddrFamily []Prefix
+
+func (ps byAddrFamily) ipv4Only() []Prefix {
+	nps := ps[:0]
+	for _, p := range ps {
+		if p, ok := p.(*IPv4); ok {
+			nps = append(nps, p)
+		}
+	}
+	return nps
+}
+
+func (ps byAddrFamily) ipv6Only() []Prefix {
+	nps := ps[:0]
+	for _, p := range ps {
+		if p, ok := p.(*IPv6); ok {
+			nps = append(nps, p)
+		}
+	}
+	return nps
+}
+
+type byAddrAndLen []Prefix
+
+func (ps byAddrAndLen) Len() int {
+	return len(ps)
+}
+
+func (ps byAddrAndLen) Less(i, j int) bool {
+	if ncmp := Compare(ps[i], ps[j]); ncmp < 0 {
+		return true
+	} else if ncmp > 0 {
+		return false
+	}
+	if ps[i].Len() < ps[j].Len() {
+		return true
+	} else if ps[i].Len() > ps[j].Len() {
+		return false
+	}
+	return false
+}
+
+func (ps byAddrAndLen) Swap(i, j int) {
+	ps[i], ps[j] = ps[j], ps[i]
 }

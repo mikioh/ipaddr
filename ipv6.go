@@ -26,7 +26,7 @@ const IPv6PrefixLen = 8 * net.IPv6len
 
 // An IPv6 represents an IPv6 address prefix.
 type IPv6 struct {
-	nbits byte    // prefix length
+	nbits int     // prefix length
 	addr  ipv6Int // address
 }
 
@@ -97,7 +97,7 @@ func (p *IPv6) String() string {
 
 // Len implements the Len method of ipaddr.Prefix interface.
 func (p *IPv6) Len() int {
-	return int(p.nbits)
+	return p.nbits
 }
 
 // NumAddr implements the NumAddr method of ipaddr.Prefix interface.
@@ -113,8 +113,8 @@ func (p *IPv6) Bits(pos, nbits int) uint32 {
 	}
 	var bits ipv6Int
 	bits[0], bits[1] = p.addr[0], p.addr[1]
-	bits.lshift(byte(pos))
-	bits.rshift(byte(IPv6PrefixLen - nbits))
+	bits.lshift(pos)
+	bits.rshift(IPv6PrefixLen - nbits)
 	return uint32(bits[1])
 }
 
@@ -145,7 +145,7 @@ func (p *IPv6) Hostmask() net.IPMask {
 
 // Netmask implements the Netmask method of ipaddr.Prefix interface.
 func (p *IPv6) Netmask() net.IPMask {
-	return net.CIDRMask(int(p.nbits), IPv6PrefixLen)
+	return net.CIDRMask(p.nbits, IPv6PrefixLen)
 }
 
 // Hosts implements the Hosts method of ipaddr.Prefix interface.
@@ -198,17 +198,17 @@ func (p *IPv6) HostIter(first net.IP) <-chan net.IP {
 
 // Subnets implements the Subnets method of ipaddr.Prefix interface.
 func (p *IPv6) Subnets(nbits int) []Prefix {
-	if nbits < 0 || p.nbits+byte(nbits) > IPv6PrefixLen {
+	if nbits < 0 || p.nbits+nbits > IPv6PrefixLen {
 		return nil
 	}
 	var subs []Prefix
 	if nbits < 17 { // don't bother runtime.makeslice by big number
 		subs = make([]Prefix, 1<<uint(nbits))
-		off := IPv6PrefixLen - p.nbits - byte(nbits)
+		off := IPv6PrefixLen - p.nbits - nbits
 		for i := range subs {
 			id := ipv6Int{0, uint64(i)}
 			id.lshift(off)
-			subs[i] = newIPv6(ipv6Int{p.addr[0] | id[0], p.addr[1] | id[1]}, p.nbits+byte(nbits))
+			subs[i] = newIPv6(ipv6Int{p.addr[0] | id[0], p.addr[1] | id[1]}, p.nbits+nbits)
 		}
 		return subs
 	}
@@ -223,18 +223,12 @@ func (p *IPv6) Subnets(nbits int) []Prefix {
 func (p *IPv6) SubnetIter(nbits int) <-chan Prefix {
 	iter := &ipv6SubnetIter{
 		p:     IPv6{addr: p.addr, nbits: p.nbits},
-		nbits: byte(nbits),
+		nbits: nbits,
 		cur:   p.addr,
 		ch:    make(chan Prefix, 1),
 	}
 	go iter.run()
 	return iter.ch
-}
-
-func (p *IPv6) chopup() (IPv6, IPv6) {
-	id := ipv6Int{0, 1}
-	id.lshift(IPv6PrefixLen - p.nbits - 1)
-	return IPv6{addr: p.addr, nbits: p.nbits + 1}, IPv6{addr: ipv6Int{p.addr[0] | id[0], p.addr[1] | id[1]}, nbits: p.nbits + 1}
 }
 
 // Exclude implements the Exclude method of ipaddr.Prefix interface.
@@ -254,14 +248,14 @@ func (p *IPv6) Exclude(prefix Prefix) []Prefix {
 		return nil
 	}
 	var subs []Prefix
-	l, r := p.chopup()
+	l, r := p.descend(1)
 	for !l.Equal(&x) && !r.Equal(&x) {
 		if l.contains(x.addr) {
 			subs = append(subs, newIPv6(r.addr, r.nbits))
-			l, r = l.chopup()
+			l, r = l.descend(1)
 		} else if r.contains(x.addr) {
 			subs = append(subs, newIPv6(l.addr, l.nbits))
-			l, r = r.chopup()
+			l, r = r.descend(1)
 		} else {
 			panic("got lost in the ipv6 forest")
 		}
@@ -274,7 +268,13 @@ func (p *IPv6) Exclude(prefix Prefix) []Prefix {
 	return subs
 }
 
-func (p *IPv6) set(i ipv6Int, nbits byte) {
+func (p *IPv6) descend(nbits int) (IPv6, IPv6) {
+	id := ipv6Int{0, 1}
+	id.lshift(IPv6PrefixLen - p.nbits - nbits)
+	return IPv6{addr: p.addr, nbits: p.nbits + nbits}, IPv6{addr: ipv6Int{p.addr[0] | id[0], p.addr[1] | id[1]}, nbits: p.nbits + nbits}
+}
+
+func (p *IPv6) set(i ipv6Int, nbits int) {
 	p.addr, p.nbits = i, nbits
 	if p.nbits > 64 {
 		p.addr[1] = i[1] & mask64(p.nbits-64)
@@ -287,7 +287,7 @@ func (p *IPv6) set(i ipv6Int, nbits byte) {
 // Set implements the Set method of ipaddr.Prefix interface.
 func (p *IPv6) Set(ip net.IP, nbits int) error {
 	if ipv6 := ip.To16(); ipv6 != nil && ipv6.To4() == nil && 0 <= nbits && nbits <= IPv6PrefixLen {
-		p.set(ipToIPv6Int(ipv6), byte(nbits))
+		p.set(ipToIPv6Int(ipv6), nbits)
 		return nil
 	}
 	return errInvalidArgument
@@ -344,7 +344,7 @@ func (a *IPv6) compare(b *IPv6) int {
 	return 0
 }
 
-func newIPv6(i ipv6Int, nbits byte) *IPv6 {
+func newIPv6(i ipv6Int, nbits int) *IPv6 {
 	p := &IPv6{}
 	p.set(i, nbits)
 	return p
@@ -358,7 +358,6 @@ type ipv6HostIter struct {
 
 func (iter *ipv6HostIter) run() {
 	defer close(iter.ch)
-loop:
 	for iter.p.contains(iter.cur) {
 		if _, eor := iter.p.isHostAssignable(iter.cur); eor {
 			break
@@ -371,7 +370,7 @@ loop:
 		select {
 		case <-tmo.C:
 			tmo.Stop()
-			break loop
+			return
 		case iter.ch <- iter.cur.IP():
 			tmo.Stop()
 		}
@@ -380,7 +379,7 @@ loop:
 
 type ipv6SubnetIter struct {
 	p      IPv6
-	nbits  byte
+	nbits  int
 	cur    ipv6Int
 	passed bool
 	ch     chan Prefix
@@ -394,7 +393,6 @@ func (iter *ipv6SubnetIter) run() {
 	var m ipv6Int
 	m.setHostmask(iter.p.nbits + iter.nbits)
 	nbits := iter.p.nbits + iter.nbits
-loop:
 	for !iter.p.isLastAddr(ipv6Int{iter.cur[0] | m[0], iter.cur[1] | m[1]}) {
 		if !iter.passed {
 			iter.passed = true
@@ -406,20 +404,20 @@ loop:
 		select {
 		case <-tmo.C:
 			tmo.Stop()
-			break loop
+			return
 		case iter.ch <- newIPv6(iter.cur, nbits):
 			tmo.Stop()
 		}
 	}
 }
 
-func commonParentIPv6(subs []Prefix) *IPv6 {
+func supernetIPv6(subs []Prefix) Prefix {
 	var base, m, diff ipv6Int
 	m.setNetmask(subs[0].(*IPv6).nbits)
 	base[0], base[1] = subs[0].(*IPv6).addr[0]&m[0], subs[0].(*IPv6).addr[1]&m[1]
 	nbits := subs[0].(*IPv6).nbits
 	for _, s := range subs[1:] {
-		diff[0], diff[1] = base[0]^s.(*IPv6).addr[0]&m[0], base[1]^s.(*IPv6).addr[1]&m[1]
+		diff[0], diff[1] = (base[0]^s.(*IPv6).addr[0])&m[0], (base[1]^s.(*IPv6).addr[1])&m[1]
 		if diff[0] != 0 {
 			if l := nlz64(diff[0]); l < nbits {
 				nbits = l
@@ -434,4 +432,65 @@ func commonParentIPv6(subs []Prefix) *IPv6 {
 		return nil
 	}
 	return newIPv6(subs[0].(*IPv6).addr, nbits)
+}
+
+func aggregateIPv6(subs []Prefix) []Prefix {
+	var aggrs []Prefix
+	for len(subs) > 0 {
+		if subs[0].(*IPv6).nbits == 0 {
+			aggrs = append(aggrs, subs[0])
+			subs = subs[1:]
+			continue
+		}
+		bf, n := ascendIPv6(subs)
+		m := 1 << uint(bf)
+		if n < m {
+			aggrs = append(aggrs, subs[0])
+			subs = subs[1:]
+			continue
+		}
+		p := supernetIPv6(subs[:m])
+		aggrs = append(aggrs, p)
+		subs = subs[m:]
+		m = 0
+		for _, s := range subs {
+			if !p.(*IPv6).contains(s.(*IPv6).addr) {
+				break
+			}
+			m++
+		}
+		subs = subs[m:]
+	}
+	return aggrs
+}
+
+func ascendIPv6(subs []Prefix) (int, int) {
+	base := subs[0].(*IPv6)
+	var m ipv6Int
+	m.setNetmask(base.nbits)
+	var lastBF, lastN int
+	for bf := 1; bf < IPv6PrefixLen; bf++ {
+		n, nfull := 0, 1<<uint(bf)
+		pat, max := &ipv6Int{0, 0}, &ipv6Int{0, 1}
+		max.lshift(bf)
+		var maggr ipv6Int
+		maggr.setNetmask(base.nbits - bf)
+		for ; pat.compare(max) < 0; pat.incr() {
+			npat := *pat
+			(&npat).lshift(IPv6PrefixLen - base.nbits)
+			var aggr ipv6Int
+			aggr[0], aggr[1] = base.addr[0]&maggr[0]|npat[0], base.addr[1]&maggr[1]|npat[1]
+			for _, s := range subs {
+				if aggr[0]^(s.(*IPv6).addr[0]&m[0]) == 0 && aggr[1]^(s.(*IPv6).addr[1]&m[1]) == 0 {
+					n++
+				}
+			}
+		}
+		if n < nfull {
+			break
+		}
+		lastBF = bf
+		lastN = n
+	}
+	return lastBF, lastN
 }
