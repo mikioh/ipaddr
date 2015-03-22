@@ -471,3 +471,29 @@ func ascendIPv4(subs []Prefix) (int, int) {
 	}
 	return lastBF, lastN
 }
+
+const ipv4EndOfRange = ipv4Int(0xffffffff)
+
+func summarizeIPv4(firstip, lastip net.IP) []Prefix {
+	first, last := ipToIPv4Int(firstip), ipToIPv4Int(lastip)
+	var sums []Prefix
+	for first.compare(last) <= 0 {
+		nbits := IPv4PrefixLen
+		for nbits > 0 {
+			m := ipv4Int(mask32(nbits - 1))
+			l, r := first&m, first|ipv4Int(^mask32(nbits-1))
+			if first.compare(l) != 0 || r.compare(last) > 0 {
+				break
+			}
+			nbits--
+		}
+		p := newIPv4(first, nbits)
+		sums = append(sums, p)
+		first = p.lastAddr()
+		if first == ipv4EndOfRange {
+			break
+		}
+		first++
+	}
+	return sums
+}

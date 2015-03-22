@@ -466,18 +466,18 @@ func aggregateIPv6(subs []Prefix) []Prefix {
 
 func ascendIPv6(subs []Prefix) (int, int) {
 	base := subs[0].(*IPv6)
-	var m ipv6Int
+	m := ipv6Int{}
 	m.setNetmask(base.nbits)
 	var lastBF, lastN int
 	for bf := 1; bf < IPv6PrefixLen; bf++ {
 		n, nfull := 0, 1<<uint(bf)
-		pat, max := &ipv6Int{0, 0}, &ipv6Int{0, 1}
+		pat, max := ipv6Int{0, 0}, ipv6Int{0, 1}
 		max.lshift(bf)
-		var maggr ipv6Int
+		maggr := ipv6Int{}
 		maggr.setNetmask(base.nbits - bf)
-		for ; pat.compare(max) < 0; pat.incr() {
-			npat := *pat
-			(&npat).lshift(IPv6PrefixLen - base.nbits)
+		for ; pat.compare(&max) < 0; pat.incr() {
+			npat := pat
+			npat.lshift(IPv6PrefixLen - base.nbits)
 			var aggr ipv6Int
 			aggr[0], aggr[1] = base.addr[0]&maggr[0]|npat[0], base.addr[1]&maggr[1]|npat[1]
 			for _, s := range subs {
@@ -493,4 +493,34 @@ func ascendIPv6(subs []Prefix) (int, int) {
 		lastN = n
 	}
 	return lastBF, lastN
+}
+
+var ipv6EndOfRange = ipv6Int{0xffffffffffffffff, 0xffffffffffffffff}
+
+func summarizeIPv6(firstip, lastip net.IP) []Prefix {
+	first, last := ipToIPv6Int(firstip), ipToIPv6Int(lastip)
+	var sums []Prefix
+	for first.compare(&last) <= 0 {
+		nbits := IPv6PrefixLen
+		for nbits > 0 {
+			m := ipv6Int{}
+			m.setNetmask(nbits - 1)
+			l, r := first, first
+			l[0], l[1] = l[0]&m[0], l[1]&m[1]
+			r.setHostmask(nbits - 1)
+			r[0], r[1] = first[0]|r[0], first[1]|r[1]
+			if first.compare(&l) != 0 || r.compare(&last) > 0 {
+				break
+			}
+			nbits--
+		}
+		p := newIPv6(first, nbits)
+		sums = append(sums, p)
+		first = p.lastAddr()
+		if first[0] == ipv6EndOfRange[0] && first[1] == ipv6EndOfRange[1] {
+			break
+		}
+		first.incr()
+	}
+	return sums
 }

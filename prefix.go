@@ -144,7 +144,7 @@ func Compare(a, b Prefix) int {
 	}
 }
 
-// Supernet finds out a shortest common prefix for the given
+// Supernet finds out a shortest common address prefix for the given
 // prefixes. It returns nil when no suitable prefix is found.
 func Supernet(prefixes []Prefix) Prefix {
 	if len(prefixes) == 0 {
@@ -173,7 +173,7 @@ func Supernet(prefixes []Prefix) Prefix {
 }
 
 // Aggregate aggregates the given prefixes and returns a list of
-// aggregated prefixes.
+// aggregated address prefixes.
 func Aggregate(prefixes []Prefix) []Prefix {
 	if len(prefixes) == 0 {
 		return nil
@@ -196,6 +196,29 @@ func Aggregate(prefixes []Prefix) []Prefix {
 		}
 		return aggregateIPv6(subs)
 	default:
+		return nil
+	}
+}
+
+// Summarize summarizes the given address range and returns a list of
+// address prefixes.
+func Summarize(first, last net.IP) []Prefix {
+	if first == nil || last == nil {
+		return nil
+	}
+	if firstip := first.To4(); firstip != nil {
+		lastip := last.To4()
+		if lastip == nil {
+			return nil
+		}
+		return summarizeIPv4(firstip, lastip)
+	} else if firstip := first.To16(); firstip != nil {
+		lastip := last.To16()
+		if lastip == nil || last.To4() != nil {
+			return nil
+		}
+		return summarizeIPv6(firstip, lastip)
+	} else {
 		return nil
 	}
 }

@@ -148,3 +148,10 @@ func BenchmarkAggregateIPv6(b *testing.B) {
 		ipaddr.Aggregate(subs)
 	}
 }
+
+func BenchmarkSummarizeIPv6(b *testing.B) {
+	first, last := net.ParseIP("2001:db8::1:1"), net.ParseIP("2001:db8::1:ffff")
+	for i := 0; i < b.N; i++ {
+		ipaddr.Summarize(first, last)
+	}
+}

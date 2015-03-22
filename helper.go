@@ -56,6 +56,20 @@ func mask32(nbits int) uint32 {
 
 type ipv4Int uint32
 
+func (a ipv4Int) compare(b ipv4Int) int {
+	if a < b {
+		return -1
+	} else if a > b {
+		return +1
+	}
+	if a < b {
+		return -1
+	} else if a > b {
+		return +1
+	}
+	return 0
+}
+
 func (i ipv4Int) IP() net.IP {
 	var b [net.IPv4len]byte
 	binary.BigEndian.PutUint32(b[:], uint32(i))

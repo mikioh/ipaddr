@@ -147,3 +147,10 @@ func BenchmarkAggregateIPv4(b *testing.B) {
 		ipaddr.Aggregate(subs)
 	}
 }
+
+func BenchmarkSummarizeIPv4(b *testing.B) {
+	first, last := net.IPv4(172, 16, 1, 1), net.IPv4(172, 16, 255, 255)
+	for i := 0; i < b.N; i++ {
+		ipaddr.Summarize(first, last)
+	}
+}
