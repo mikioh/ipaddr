@@ -212,7 +212,7 @@ func Summarize(first, last net.IP) []Prefix {
 			return nil
 		}
 		return summarizeIPv4(firstip, lastip)
-	} else if firstip := first.To16(); firstip != nil {
+	} else if firstip := first.To16(); firstip != nil && firstip.To4() == nil {
 		lastip := last.To16()
 		if lastip == nil || last.To4() != nil {
 			return nil
