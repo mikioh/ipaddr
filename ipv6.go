@@ -69,6 +69,16 @@ func (p *IPv6) Contains(ip net.IP) bool {
 	return p.contains(ipToIPv6Int(ip.To16()))
 }
 
+// ContainsPrefix implements the ContainsPrefix method of ipaddr.Prefix interface.
+func (p *IPv6) ContainsPrefix(prefix Prefix) bool {
+	q, ok := prefix.(*IPv6)
+	if !ok {
+		return false
+	}
+
+	return p.nbits <= q.nbits && p.contains(q.addr)
+}
+
 // Overlaps implements the Overlaps method of ipaddr.Prefix interface.
 func (p *IPv6) Overlaps(prefix Prefix) bool {
 	q, ok := prefix.(*IPv6)

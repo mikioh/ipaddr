@@ -22,6 +22,20 @@ func BenchmarkIPv4Contains(b *testing.B) {
 	}
 }
 
+func BenchmarkIPv4ContainsPrefix(b *testing.B) {
+	p1, err := ipaddr.NewPrefix(net.ParseIP("192.168.255.0"), 24)
+	if err != nil {
+		b.Fatalf("ipaddr.NewPrefix failed: %v", err)
+	}
+	p2, err := ipaddr.NewPrefix(net.ParseIP("192.168.255.1"), 24)
+	if err != nil {
+		b.Fatalf("ipaddr.NewPrefix failed: %v", err)
+	}
+	for i := 0; i < b.N; i++ {
+		p1.ContainsPrefix(p2)
+	}
+}
+
 func BenchmarkIPv4Overlaps(b *testing.B) {
 	p1, err := ipaddr.NewPrefix(net.ParseIP("192.168.1.0"), 24)
 	if err != nil {
