@@ -12,6 +12,7 @@ import (
 	"math/big"
 	"net"
 	"sort"
+	"strconv"
 )
 
 var errInvalidArgument = errors.New("invalid arugument")
@@ -111,6 +112,26 @@ type Prefix interface {
 	// UnmarshalText replaces the existing address and prefix
 	// length of the prefix with text.
 	UnmarshalText(text []byte) error
+}
+
+// MustParsePrefix return a parsed Prefix. Panic if error occur.
+func MustParsePrefix(s string) Prefix {
+	prefix, err := ParsePrefix(s)
+	if err != nil {
+		panic(`ipaddr: ParsePrefix(` + strconv.Quote(s) + `): ` + err.Error())
+	}
+	return prefix
+}
+
+// ParsePrefix return a parsed Prefix.
+func ParsePrefix(s string) (Prefix, error) {
+	_, ipnet, err := net.ParseCIDR(s)
+	if err != nil {
+		return nil, errInvalidArgument
+	}
+
+	nbits, _ := ipnet.Mask.Size()
+	return NewPrefix(ipnet.IP, nbits)
 }
 
 // NewPrefix returns a new Prefix.
