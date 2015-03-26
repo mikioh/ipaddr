@@ -21,6 +21,9 @@ type Prefix interface {
 	// Contains reports whether the prefix includes the given ip.
 	Contains(ip net.IP) bool
 
+	// ContainsPrefix reports whether the prefix includes the given prefix.
+	ContainsPrefix(prefix Prefix) bool
+
 	// Overlaps reports whether the prefix overlaps with the given
 	// prefix.
 	Overlaps(prefix Prefix) bool

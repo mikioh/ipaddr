@@ -72,6 +72,15 @@ func (p *IPv4) Contains(ip net.IP) bool {
 	return p.contains(ipToIPv4Int(ip.To4()))
 }
 
+// ContainsPrefix implements the ContainsPrefix method of ipaddr.Prefix interface.
+func (p *IPv4) ContainsPrefix(prefix Prefix) bool {
+	q, ok := prefix.(*IPv4)
+	if !ok {
+		return false
+	}
+	return p.nbits <= q.nbits && p.contains(q.addr)
+}
+
 // Overlaps implements the Overlaps method of ipaddr.Prefix interface.
 func (p *IPv4) Overlaps(prefix Prefix) bool {
 	q, ok := prefix.(*IPv4)

@@ -78,6 +78,40 @@ func TestContains(t *testing.T) {
 	}
 }
 
+var containsPrefixTests = []struct {
+	addr      net.IP
+	prefixLen int
+	sub       net.IP
+	subLen    int
+	ok        bool
+}{
+	{net.ParseIP("192.168.0.0"), 24, net.ParseIP("192.168.0.1"), 24, true},
+
+	{net.ParseIP("192.168.0.0"), 24, net.ParseIP("192.168.1.1"), 32, false},
+
+	{net.ParseIP("192.168.0.0"), 24, net.ParseIP("192.168.0.0"), 22, false},
+
+	{net.ParseIP("2001:db8:f001::"), 48, net.ParseIP("2001:db8:f001::1"), 128, true},
+
+	{net.ParseIP("2001:db8:f001::"), 48, net.ParseIP("2001:db8:f002::1"), 44, false},
+}
+
+func TestContainsPrefix(t *testing.T) {
+	for i, tt := range containsPrefixTests {
+		p1, err := ipaddr.NewPrefix(tt.addr, tt.prefixLen)
+		if err != nil {
+			t.Fatalf("ipaddr.NewPrefix failed: %v", err)
+		}
+		p2, err := ipaddr.NewPrefix(tt.sub, tt.subLen)
+		if err != nil {
+			t.Fatalf("ipaddr.NewPrefix failed: %v", err)
+		}
+		if ok := p1.ContainsPrefix(p2); ok != tt.ok {
+			t.Fatalf("#%v: got %v; expected %v", i, ok, tt.ok)
+		}
+	}
+}
+
 var overlapsTests = []struct {
 	in     string
 	others []string
