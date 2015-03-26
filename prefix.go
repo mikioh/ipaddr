@@ -113,6 +113,16 @@ type Prefix interface {
 	UnmarshalText(text []byte) error
 }
 
+// ParsePrefix returns a new Prefix.
+func ParsePrefix(s string) (Prefix, error) {
+	_, ipnet, err := net.ParseCIDR(s)
+	if err != nil {
+		return nil, errInvalidArgument
+	}
+	nbits, _ := ipnet.Mask.Size()
+	return NewPrefix(ipnet.IP, nbits)
+}
+
 // NewPrefix returns a new Prefix.
 func NewPrefix(ip net.IP, nbits int) (Prefix, error) {
 	if ipv4 := ip.To4(); ipv4 != nil && 0 <= nbits && nbits <= IPv4PrefixLen {
