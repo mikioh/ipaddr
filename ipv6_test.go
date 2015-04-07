@@ -22,6 +22,20 @@ func BenchmarkIPv6Contains(b *testing.B) {
 	}
 }
 
+func BenchmarkIPv6ContainsPrefix(b *testing.B) {
+	p1, err := ipaddr.NewPrefix(net.ParseIP("2001:db8:f001:f002::"), 24)
+	if err != nil {
+		b.Fatalf("ipaddr.NewPrefix failed: %v", err)
+	}
+	p2, err := ipaddr.NewPrefix(net.ParseIP("2001:db8:f001:f002::1"), 24)
+	if err != nil {
+		b.Fatalf("ipaddr.NewPrefix failed: %v", err)
+	}
+	for i := 0; i < b.N; i++ {
+		p1.ContainsPrefix(p2)
+	}
+}
+
 func BenchmarkIPv6Overlaps(b *testing.B) {
 	p1, err := ipaddr.NewPrefix(net.ParseIP("2001:db8:f001:f002::"), 64)
 	if err != nil {

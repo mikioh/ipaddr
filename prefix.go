@@ -21,6 +21,9 @@ type Prefix interface {
 	// Contains reports whether the prefix includes the given ip.
 	Contains(ip net.IP) bool
 
+	// ContainsPrefix reports whether the prefix includes the given prefix.
+	ContainsPrefix(prefix Prefix) bool
+
 	// Overlaps reports whether the prefix overlaps with the given
 	// prefix.
 	Overlaps(prefix Prefix) bool
@@ -111,6 +114,16 @@ type Prefix interface {
 	// UnmarshalText replaces the existing address and prefix
 	// length of the prefix with text.
 	UnmarshalText(text []byte) error
+}
+
+// ParsePrefix returns a new Prefix.
+func ParsePrefix(s string) (Prefix, error) {
+	_, ipnet, err := net.ParseCIDR(s)
+	if err != nil {
+		return nil, errInvalidArgument
+	}
+	nbits, _ := ipnet.Mask.Size()
+	return NewPrefix(ipnet.IP, nbits)
 }
 
 // NewPrefix returns a new Prefix.
