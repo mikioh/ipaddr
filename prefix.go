@@ -114,8 +114,8 @@ type Prefix interface {
 }
 
 // ParsePrefix returns a new Prefix.
-func ParsePrefix(s string) (Prefix, error) {
-	_, ipnet, err := net.ParseCIDR(s)
+func ParsePrefix(prefix string) (Prefix, error) {
+	_, ipnet, err := net.ParseCIDR(prefix)
 	if err != nil {
 		return nil, errInvalidArgument
 	}
