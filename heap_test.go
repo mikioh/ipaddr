@@ -14,32 +14,18 @@ import (
 
 type prefixHeap []ipaddr.Prefix
 
-func (h *prefixHeap) Less(i, j int) bool {
-	return ipaddr.Compare((*h)[i], (*h)[j]) < 0
-}
-
-func (h *prefixHeap) Swap(i, j int) {
-	(*h)[i], (*h)[j] = (*h)[j], (*h)[i]
-}
-
-func (h *prefixHeap) Len() int {
-	return len(*h)
-}
-
-func (h *prefixHeap) Pop() (v interface{}) {
-	*h, v = (*h)[:h.Len()-1], (*h)[h.Len()-1]
-	return
-}
-
-func (h *prefixHeap) Push(v interface{}) {
-	*h = append(*h, v.(ipaddr.Prefix))
-}
+func (h *prefixHeap) Less(i, j int) bool   { return ipaddr.Compare(&(*h)[i], &(*h)[j]) < 0 }
+func (h *prefixHeap) Swap(i, j int)        { (*h)[i], (*h)[j] = (*h)[j], (*h)[i] }
+func (h *prefixHeap) Len() int             { return len(*h) }
+func (h *prefixHeap) Pop() (v interface{}) { *h, v = (*h)[:h.Len()-1], (*h)[h.Len()-1]; return }
+func (h *prefixHeap) Push(v interface{})   { *h = append(*h, v.(ipaddr.Prefix)) }
 
 func TestPrefixHeap(t *testing.T) {
-	super, err := ipaddr.NewPrefix(net.ParseIP("2001:db8:f001::"), 48)
+	_, n, err := net.ParseCIDR("2001:db8:f001::/48")
 	if err != nil {
 		t.Fatal(err)
 	}
+	super := ipaddr.NewPrefix(n)
 	h := new(prefixHeap)
 	heap.Init(h)
 	for _, p := range super.Subnets(6) {
