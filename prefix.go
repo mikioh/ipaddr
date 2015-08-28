@@ -38,7 +38,7 @@ func (p *Prefix) lastIPv4Int() ipv4Int {
 	return ipToIPv4Int(p.IP) | ipv4Int(^mask32(p.Len()))
 }
 
-func (p *Prefix) lastIPv4MappedInt() ipv6Int {
+func (p *Prefix) lastIPv4MappedIPv6Int() ipv6Int {
 	i4 := ipToIPv4Int(p.IP) | ipv4Int(^mask32(p.Len()))
 	var i6 ipv6Int
 	i6[1] = 0x0000ffff00000000 | uint64(i4)
@@ -215,9 +215,6 @@ func (p *Prefix) UnmarshalText(txt []byte) error {
 // Aggregate aggregates the prefixes ps and returns a list of
 // aggregated prefixes.
 func Aggregate(ps []Prefix) []Prefix {
-	if len(ps) == 0 {
-		return nil
-	}
 	ps = sortAndDedup(ps, true)
 	if len(ps) == 0 {
 		return nil
@@ -357,7 +354,7 @@ func Summarize(first, last net.IP) []Prefix {
 	return nil
 }
 
-const ipv4IntEOR = ipv4Int(0xffffffff)
+const ipv4IntEOR = ipv4Int(math.MaxUint32)
 
 func summarizeIPv4(fip, lip net.IP) []Prefix {
 	var ps []Prefix
@@ -383,7 +380,7 @@ func summarizeIPv4(fip, lip net.IP) []Prefix {
 	return ps
 }
 
-var ipv6IntEOR = ipv6Int{0xffffffffffffffff, 0xffffffffffffffff}
+var ipv6IntEOR = ipv6Int{math.MaxUint64, math.MaxUint64}
 
 func summarizeIPv6(fip, lip net.IP) []Prefix {
 	var ps []Prefix
@@ -516,6 +513,9 @@ func (ps byAddrLen) Less(i, j int) bool {
 func (ps byAddrLen) Swap(i, j int) { ps[i], ps[j] = ps[j], ps[i] }
 
 func sortAndDedup(ps []Prefix, strict bool) []Prefix {
+	if len(ps) == 0 {
+		return nil
+	}
 	if strict {
 		if ps[0].IP.To4() != nil {
 			ps = byAddrFamily(ps).ipv4Only()
@@ -587,6 +587,18 @@ func (a *ipv6Int) cmp(b *ipv6Int) int {
 		return +1
 	}
 	return 0
+}
+
+func (i *ipv6Int) decr() {
+	if i[0] == 0 && i[1] == 0 {
+		return
+	}
+	if i[1] > 0 {
+		i[1]--
+	} else {
+		i[0]--
+		i[1] = math.MaxUint64
+	}
 }
 
 func (i *ipv6Int) incr() {
