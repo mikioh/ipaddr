@@ -97,6 +97,26 @@ func BenchmarkCursorNextIPv6(b *testing.B) {
 	}
 }
 
+func BenchmarkCursorPrevIPv4(b *testing.B) {
+	ps := toPrefixes([]string{"192.168.0.255/24"})
+	c := ipaddr.NewCursor(ps)
+
+	for i := 0; i < b.N; i++ {
+		for c.Prev() != nil {
+		}
+	}
+}
+
+func BenchmarkCursorPrevIPv6(b *testing.B) {
+	ps := toPrefixes([]string{"2001:db8::ff/120"})
+	c := ipaddr.NewCursor(ps)
+
+	for i := 0; i < b.N; i++ {
+		for c.Prev() != nil {
+		}
+	}
+}
+
 func BenchmarkPrefixEqualIPv4(b *testing.B) {
 	ps := toPrefixes([]string{"192.168.1.0/24", "192.168.2.0/24"})
 

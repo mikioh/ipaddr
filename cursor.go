@@ -17,32 +17,21 @@ type Position struct {
 
 // A Cursor repesents a movable indicator on multiple prefixes.
 type Cursor struct {
-	curr, last ipv6Int
+	curr, start, end ipv6Int
 
 	pi int
-	ps []Prefix // IP address prefixes
-}
-
-func (c *Cursor) next() {
-	c.pi++
-	ip := c.ps[c.pi].IP.To16()
-	c.curr = ipToIPv6Int(ip)
-	if ip.To4() != nil {
-		c.last = c.ps[c.pi].lastIPv4MappedInt()
-	}
-	if ip.To16() != nil && ip.To4() == nil {
-		c.last = c.ps[c.pi].lastIPv6Int()
-	}
+	ps []Prefix
 }
 
 func (c *Cursor) set(pi int, ip net.IP) {
 	c.pi = pi
 	c.curr = ipToIPv6Int(ip.To16())
+	c.start = ipToIPv6Int(c.ps[c.pi].IP.To16())
 	if ip.To4() != nil {
-		c.last = c.ps[c.pi].lastIPv4MappedInt()
+		c.end = c.ps[c.pi].lastIPv4MappedInt()
 	}
 	if ip.To16() != nil && ip.To4() == nil {
-		c.last = c.ps[c.pi].lastIPv6Int()
+		c.end = c.ps[c.pi].lastIPv6Int()
 	}
 }
 
@@ -64,12 +53,20 @@ func (c *Cursor) List() []Prefix {
 // Next returns the next position on the cursor c.
 // It returns nil at the end on the cursor c.
 func (c *Cursor) Next() *Position {
-	n := c.curr.cmp(&c.last)
+	n := c.curr.cmp(&c.end)
 	if n == 0 {
 		if c.pi == len(c.ps)-1 {
 			return nil
 		}
-		c.next()
+		c.pi++
+		c.curr = ipToIPv6Int(c.ps[c.pi].IP.To16())
+		c.start = c.curr
+		if c.ps[c.pi].IP.To4() != nil {
+			c.end = c.ps[c.pi].lastIPv4MappedInt()
+		}
+		if c.ps[c.pi].IP.To16() != nil && c.ps[c.pi].IP.To4() == nil {
+			c.end = c.ps[c.pi].lastIPv6Int()
+		}
 	} else {
 		c.curr.incr()
 	}
@@ -79,6 +76,39 @@ func (c *Cursor) Next() *Position {
 // Pos returns the current postion on the cursor c.
 func (c *Cursor) Pos() *Position {
 	return &Position{IP: c.curr.ip(), Prefix: c.ps[c.pi]}
+}
+
+// Prev returns the previous position on the cursor c.
+// It returns nil at the start on the cursor c.
+func (c *Cursor) Prev() *Position {
+	n := c.curr.cmp(&c.start)
+	if n == 0 {
+		if c.pi == 0 {
+			return nil
+		}
+		c.pi--
+		if c.ps[c.pi].IP.To4() != nil {
+			c.curr = c.ps[c.pi].lastIPv4MappedInt()
+			c.end = c.curr
+		}
+		if c.ps[c.pi].IP.To16() != nil && c.ps[c.pi].IP.To4() == nil {
+			c.curr = c.ps[c.pi].lastIPv6Int()
+			c.end = c.curr
+		}
+		c.start = ipToIPv6Int(c.ps[c.pi].IP.To16())
+	} else {
+		c.curr.decr()
+	}
+	return c.Pos()
+}
+
+// Reset resets all state and switches the prefixes to ps.
+func (c *Cursor) Reset(ps []Prefix) {
+	ps = sortAndDedup(ps, false)
+	if len(ps) > 0 {
+		c.ps = ps
+	}
+	c.set(0, c.ps[0].IP.To16())
 }
 
 // Set sets the current postion on the cursor c to pos.
@@ -102,9 +132,6 @@ func (c *Cursor) Set(pos *Position) error {
 
 // NewCursor returns a new cursor.
 func NewCursor(ps []Prefix) *Cursor {
-	if len(ps) == 0 {
-		return nil
-	}
 	ps = sortAndDedup(ps, false)
 	if len(ps) == 0 {
 		return nil

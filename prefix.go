@@ -215,9 +215,6 @@ func (p *Prefix) UnmarshalText(txt []byte) error {
 // Aggregate aggregates the prefixes ps and returns a list of
 // aggregated prefixes.
 func Aggregate(ps []Prefix) []Prefix {
-	if len(ps) == 0 {
-		return nil
-	}
 	ps = sortAndDedup(ps, true)
 	if len(ps) == 0 {
 		return nil
@@ -516,6 +513,9 @@ func (ps byAddrLen) Less(i, j int) bool {
 func (ps byAddrLen) Swap(i, j int) { ps[i], ps[j] = ps[j], ps[i] }
 
 func sortAndDedup(ps []Prefix, strict bool) []Prefix {
+	if len(ps) == 0 {
+		return nil
+	}
 	if strict {
 		if ps[0].IP.To4() != nil {
 			ps = byAddrFamily(ps).ipv4Only()
@@ -587,6 +587,18 @@ func (a *ipv6Int) cmp(b *ipv6Int) int {
 		return +1
 	}
 	return 0
+}
+
+func (i *ipv6Int) decr() {
+	if i[0] == 0 && i[1] == 0 {
+		return
+	}
+	if i[1] > 0 {
+		i[1]--
+	} else {
+		i[0]--
+		i[1] = math.MaxUint64
+	}
 }
 
 func (i *ipv6Int) incr() {
