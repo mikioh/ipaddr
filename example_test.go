@@ -13,15 +13,10 @@ import (
 )
 
 func ExampleCursor_traversal() {
-	var ps []ipaddr.Prefix
-	for _, p := range []string{"2001:db8::/126", "192.168.1.128/30", "192.168.0.0/29"} {
-		_, n, err := net.ParseCIDR(p)
-		if err != nil {
-			log.Fatal(err)
-		}
-		ps = append(ps, *ipaddr.NewPrefix(n))
+	c, err := ipaddr.Parse("2001:db8::/126,192.168.1.128/30,192.168.0.0/29")
+	if err != nil {
+		log.Fatal(err)
 	}
-	c := ipaddr.NewCursor(ps)
 	fmt.Println(c.Pos(), c.First(), c.Last(), c.List())
 	for pos := c.Next(); pos != nil; pos = c.Next() {
 		fmt.Println(pos)
