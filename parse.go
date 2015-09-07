@@ -35,12 +35,10 @@ func Parse(s string) (*Cursor, error) {
 
 func parseMulti(s string) ([]Position, []Prefix, error) {
 	ss := strings.Split(s, ",")
-	for i := range ss {
-		ss[i] = strings.TrimSpace(ss[i])
-	}
 	var poss []Position
 	var ps []Prefix
 	for _, s := range ss {
+		s = strings.TrimSpace(s)
 		pos, p, err := parse(s)
 		if err != nil {
 			return nil, nil, err
