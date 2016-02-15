@@ -69,13 +69,16 @@ func ExamplePrefix_subnettingAndSupernetting() {
 	}
 	p := ipaddr.NewPrefix(n)
 	fmt.Println(p.IP, p.Last(), p.Len(), p.Mask, p.Hostmask())
+	fmt.Println()
 	ps := p.Subnets(3)
 	for _, p := range ps {
 		fmt.Println(p)
 	}
+	fmt.Println()
 	fmt.Println(ipaddr.Supernet(ps[4:6]))
 	// Output:
 	// 172.16.0.0 172.16.255.255 16 ffff0000 0000ffff
+	//
 	// 172.16.0.0/19
 	// 172.16.32.0/19
 	// 172.16.64.0/19
@@ -84,6 +87,7 @@ func ExamplePrefix_subnettingAndSupernetting() {
 	// 172.16.160.0/19
 	// 172.16.192.0/19
 	// 172.16.224.0/19
+	//
 	// 172.16.128.0/18
 }
 
@@ -94,10 +98,12 @@ func ExamplePrefix_subnettingAndAggregation() {
 	}
 	p := ipaddr.NewPrefix(n)
 	fmt.Println(p.IP, p.Last(), p.Len(), p.Mask, p.Hostmask())
+	fmt.Println()
 	ps := p.Subnets(2)
 	for _, p := range ps {
 		fmt.Println(p)
 	}
+	fmt.Println()
 	_, n, err = net.ParseCIDR("192.168.100.0/24")
 	if err != nil {
 		log.Fatal(err)
@@ -106,10 +112,12 @@ func ExamplePrefix_subnettingAndAggregation() {
 	fmt.Println(ipaddr.Aggregate(ps[2:]))
 	// Output:
 	// 192.168.0.0 192.168.0.255 24 ffffff00 000000ff
+	//
 	// 192.168.0.0/26
 	// 192.168.0.64/26
 	// 192.168.0.128/26
 	// 192.168.0.192/26
+	//
 	// [192.168.0.128/25 192.168.100.0/24]
 }
 
