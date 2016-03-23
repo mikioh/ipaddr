@@ -20,21 +20,10 @@ type byAddrLen []ipaddr.Prefix
 func (ps byAddrLen) Len() int { return len(ps) }
 
 func (ps byAddrLen) Less(i, j int) bool {
-	n := ipaddr.Compare(&ps[i], &ps[j])
-	if n < 0 {
-		return true
+	if n := ipaddr.Compare(&ps[i], &ps[j]); n != 0 {
+		return n < 0
 	}
-	if n > 0 {
-		return false
-	}
-	li, lj := ps[i].Len(), ps[j].Len()
-	if li < lj {
-		return true
-	}
-	if li > lj {
-		return false
-	}
-	return false
+	return ps[i].Len() < ps[j].Len()
 }
 
 func (ps byAddrLen) Swap(i, j int) { ps[i], ps[j] = ps[j], ps[i] }

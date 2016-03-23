@@ -500,17 +500,9 @@ func (ps byAddrFamily) ipv6Only() []Prefix {
 
 type byAddrLen []Prefix
 
-func (ps byAddrLen) Len() int { return len(ps) }
-
-func (ps byAddrLen) Less(i, j int) bool {
-	n := Compare(&ps[i], &ps[j])
-	if n < 0 {
-		return true
-	}
-	return false
-}
-
-func (ps byAddrLen) Swap(i, j int) { ps[i], ps[j] = ps[j], ps[i] }
+func (ps byAddrLen) Len() int           { return len(ps) }
+func (ps byAddrLen) Less(i, j int) bool { return Compare(&ps[i], &ps[j]) < 0 }
+func (ps byAddrLen) Swap(i, j int)      { ps[i], ps[j] = ps[j], ps[i] }
 
 func sortAndDedup(ps []Prefix, strict bool) []Prefix {
 	if len(ps) == 0 {
