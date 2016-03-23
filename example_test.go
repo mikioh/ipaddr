@@ -75,7 +75,11 @@ func ExamplePrefix_subnettingAndSupernetting() {
 		fmt.Println(p)
 	}
 	fmt.Println()
+	fmt.Println(ipaddr.Supernet(ps))
+	fmt.Println(ipaddr.Supernet(ps[:2]))
+	fmt.Println(ipaddr.Supernet(ps[2:4]))
 	fmt.Println(ipaddr.Supernet(ps[4:6]))
+	fmt.Println(ipaddr.Supernet(ps[6:8]))
 	// Output:
 	// 172.16.0.0 172.16.255.255 16 ffff0000 0000ffff
 	//
@@ -88,7 +92,11 @@ func ExamplePrefix_subnettingAndSupernetting() {
 	// 172.16.192.0/19
 	// 172.16.224.0/19
 	//
+	// 172.16.0.0/16
+	// 172.16.0.0/18
+	// 172.16.64.0/18
 	// 172.16.128.0/18
+	// 172.16.192.0/18
 }
 
 func ExamplePrefix_subnettingAndAggregation() {
@@ -109,7 +117,9 @@ func ExamplePrefix_subnettingAndAggregation() {
 		log.Fatal(err)
 	}
 	ps = append(ps, *ipaddr.NewPrefix(n))
-	fmt.Println(ipaddr.Aggregate(ps[2:]))
+	fmt.Println(ipaddr.Aggregate(ps))
+	fmt.Println(ipaddr.Aggregate(ps[:2]))
+	fmt.Println(ipaddr.Aggregate(ps[2:4]))
 	// Output:
 	// 192.168.0.0 192.168.0.255 24 ffffff00 000000ff
 	//
@@ -118,7 +128,9 @@ func ExamplePrefix_subnettingAndAggregation() {
 	// 192.168.0.128/26
 	// 192.168.0.192/26
 	//
-	// [192.168.0.128/25 192.168.100.0/24]
+	// [192.168.0.0/24 192.168.100.0/24]
+	// [192.168.0.0/25]
+	// [192.168.0.128/25]
 }
 
 func ExamplePrefix_addressRangeSummarization() {
