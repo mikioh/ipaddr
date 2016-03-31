@@ -11,3 +11,6 @@ go:
 script:
 - go test -v
 - go test -v -run=none -bench=. -benchmem
+
+notifications:
+  email: false
