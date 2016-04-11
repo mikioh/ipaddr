@@ -45,7 +45,7 @@ func (c *Cursor) List() []Prefix {
 	return c.ps
 }
 
-// Next turns to the next postion on the cursor c.
+// Next turns to the next position on the cursor c.
 // It returns nil at the end on the cursor c.
 func (c *Cursor) Next() *Position {
 	n := c.curr.cmp(&c.end)
@@ -68,7 +68,7 @@ func (c *Cursor) Next() *Position {
 	return c.Pos()
 }
 
-// Pos returns the current postion on the cursor c.
+// Pos returns the current position on the cursor c.
 func (c *Cursor) Pos() *Position {
 	return &Position{IP: c.curr.ip(), Prefix: c.ps[c.pi]}
 }
@@ -107,7 +107,7 @@ func (c *Cursor) Reset(ps []Prefix) {
 	c.set(0, c.ps[0].IP.To16())
 }
 
-// Set sets the current postion on the cursor c to pos.
+// Set sets the current position on the cursor c to pos.
 func (c *Cursor) Set(pos *Position) error {
 	if pos == nil {
 		return errors.New("invalid position")
