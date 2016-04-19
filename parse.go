@@ -14,10 +14,10 @@ import (
 //
 // Examples:
 //
-//	Parse("192.168.0.1")
+//	Parse("192.0.2.1")
 //	Parse("2001:db8::1/128")
-//	Parse("172.16.0.0/16")
-//	Parse("192.168.0.1,2001:db8::1/128,172.16.0.0/16")
+//	Parse("203.0.113.0/24")
+//	Parse("192.0.2.1,2001:db8::1/128,203.0.113.0/24")
 func Parse(s string) (*Cursor, error) {
 	poss, ps, err := parseMulti(s)
 	if err != nil {
