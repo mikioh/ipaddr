@@ -2,3 +2,4 @@ Package ipaddr provides basic functions for the manipulation of IP address prefi
 
 [![GoDoc](https://godoc.org/github.com/mikioh/ipaddr?status.png)](https://godoc.org/github.com/mikioh/ipaddr)
 [![Build Status](https://travis-ci.org/mikioh/ipaddr.svg?branch=master)](https://travis-ci.org/mikioh/ipaddr)
+[![Go Report Card](https://goreportcard.com/badge/github.com/mikioh/ipaddr)](https://goreportcard.com/report/github.com/mikioh/ipaddr)
