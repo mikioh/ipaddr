@@ -502,11 +502,11 @@ func supernetIPv6(ps []Prefix) *Prefix {
 
 type ipv4Int uint32
 
-func (a ipv4Int) cmp(b ipv4Int) int {
-	if a < b {
+func (i ipv4Int) cmp(j ipv4Int) int {
+	if i < j {
 		return -1
 	}
-	if a > b {
+	if i > j {
 		return +1
 	}
 	return 0
@@ -527,17 +527,17 @@ func (i ipv4Int) prefix(l, z int) *Prefix {
 
 type ipv6Int [2]uint64
 
-func (a *ipv6Int) cmp(b *ipv6Int) int {
-	if a[0] < b[0] {
+func (i *ipv6Int) cmp(j *ipv6Int) int {
+	if i[0] < j[0] {
 		return -1
 	}
-	if a[0] > b[0] {
+	if i[0] > j[0] {
 		return +1
 	}
-	if a[1] < b[1] {
+	if i[1] < j[1] {
 		return -1
 	}
-	if a[1] > b[1] {
+	if i[1] > j[1] {
 		return +1
 	}
 	return 0
