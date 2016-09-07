@@ -100,7 +100,7 @@ func (c *Cursor) Prev() *Position {
 // Reset resets all state and switches the prefixes to ps.
 // It uses the existing prefixes when ps is nil.
 func (c *Cursor) Reset(ps []Prefix) {
-	ps = sortAndDedup(ps, false)
+	ps = sortAndDedup(ps, 'a', false)
 	if len(ps) > 0 {
 		c.ps = ps
 	}
@@ -128,7 +128,7 @@ func (c *Cursor) Set(pos *Position) error {
 
 // NewCursor returns a new cursor.
 func NewCursor(ps []Prefix) *Cursor {
-	ps = sortAndDedup(ps, false)
+	ps = sortAndDedup(ps, 'a', false)
 	if len(ps) == 0 {
 		return nil
 	}
