@@ -98,6 +98,14 @@ var aggregateTests = []struct {
 		[]string{"0.0.0.0/15", "0.3.0.0/16"},
 		[]string{"0.0.0.0/15", "0.3.0.0/16"},
 	},
+	{
+		[]string{"192.0.0.0/24", "192.0.1.0/24", "192.0.3.0/24", "192.0.2.0/26", "192.0.2.64/26", "192.0.2.128/26", "192.0.2.192/26"},
+		[]string{"192.0.0.0/22"},
+	},
+	{
+		[]string{"192.168.0.0/24", "192.168.1.0/24", "192.168.2.0/24", "192.168.3.0/24"},
+		[]string{"192.168.0.0/22"},
+	},
 
 	// IPv6 prefixes
 	{
@@ -111,6 +119,10 @@ var aggregateTests = []struct {
 	{
 		[]string{"::/0", "::/0", "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128", "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128"},
 		[]string{"::/0", "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128"},
+	},
+	{
+		[]string{"2001:db8::/127", "2001:db8::1/128"},
+		[]string{"2001:db8::/127", "2001:db8::1/128"},
 	},
 }
 

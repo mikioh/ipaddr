@@ -11,6 +11,7 @@ import (
 	"math"
 	"math/big"
 	"net"
+	"sort"
 )
 
 var (
@@ -244,62 +245,72 @@ func (p *Prefix) UnmarshalText(txt []byte) error {
 // Aggregate aggregates the prefixes ps and returns a list of
 // aggregated prefixes.
 func Aggregate(ps []Prefix) []Prefix {
-	ps = sortAndDedup(ps, 'd', true)
-	if len(ps) == 0 {
+	ps = newSortedPrefixes(ps, sortDescending, true)
+	switch len(ps) {
+	case 0:
 		return nil
-	}
-	if len(ps) == 1 {
+	case 1:
 		return ps[:1]
 	}
-	bfacs, super := branchingFactorsIPv6, supernetIPv6
+	bfFn, superFn := branchingFactorsIPv6, supernetIPv6
 	if ps[0].IP.To4() != nil {
-		bfacs, super = branchingFactorsIPv4, supernetIPv4
+		bfFn, superFn = branchingFactorsIPv4, supernetIPv4
 	}
-	var nps []Prefix
+	var lastAggr *Prefix
+	var djnts, aggrs []Prefix
 	for len(ps) > 0 {
-		if ps[0].Len() == 0 {
-			nps = append(nps, ps[0])
+		l := ps[0].Len()
+		if l == 0 {
+			djnts = append(djnts, ps[0])
 			ps = ps[1:]
 			continue
 		}
-		bf, n := bfacs(ps)
-		m := 1 << uint(bf)
-		if n < m {
-			nps = append(nps, ps[0])
-			ps = ps[1:]
-			continue
-		}
-		s := super(ps[:m])
-		nps = append(nps, *s)
-		ps = ps[m:]
-		m = 0
-		for _, p := range ps {
-			if !s.Contains(p.IP) {
+		cands := make([]Prefix, 0, len(ps))
+		for i := range ps {
+			if ps[i].Len() != l {
 				break
 			}
-			m++
+			cands = append(cands, ps[i])
 		}
-		ps = ps[m:]
+		if lastAggr != nil && lastAggr.Len() == l {
+			cands = append([]Prefix{*lastAggr}, cands...)
+		}
+		n, ok := bfFn(cands)
+		if !ok {
+			djnts = append(djnts, ps[0])
+			ps = ps[1:]
+			continue
+		}
+		aggr := superFn(cands[:n])
+		if lastAggr != nil {
+			ps = ps[n-1:]
+			aggrs = aggrs[:len(aggrs)-1]
+		} else {
+			ps = ps[n:]
+		}
+		aggrs = append(aggrs, *aggr)
+		lastAggr = aggr
 	}
-	nps = sortAndDedup(nps, 'a', true)
-	return nps
+	aggrs = append(aggrs, djnts...)
+	sort.Sort(byAscending(aggrs))
+	return aggrs
 }
 
-// branchingFactorsIPv4 returns a branching factor and a number of
-// containing prefixes.
-func branchingFactorsIPv4(ps []Prefix) (lastBF, lastN int) {
-	x := ipToIPv4Int(ps[0].IP.Mask(ps[0].Mask))
-	m := ipMaskToIPv4Int(ps[0].Mask)
+// branchingFactorsIPv4 returns a branching factor.
+func branchingFactorsIPv4(ps []Prefix) (int, bool) {
+	var lastBF, lastN int
+	base := ipToIPv4Int(ps[0].IP.Mask(ps[0].Mask))
+	mask := ipMaskToIPv4Int(ps[0].Mask)
 	l := ps[0].Len()
 	for bf := 1; bf < IPv4PrefixLen; bf++ {
 		n, nfull := 0, 1<<uint(bf)
 		max := ipv4Int(1 << uint(bf))
-		maggr := m << uint(bf)
+		aggrMask := mask << uint(bf)
 		for pat := ipv4Int(0); pat < max; pat++ {
-			aggr := x&maggr | pat<<uint(IPv4PrefixLen-l)
+			aggr := base&aggrMask | pat<<uint(IPv4PrefixLen-l)
 			for _, p := range ps {
-				y := ipToIPv4Int(p.IP)
-				if aggr == y&m {
+				i := ipToIPv4Int(p.IP)
+				if aggr == i&mask {
 					n++
 				}
 			}
@@ -310,29 +321,30 @@ func branchingFactorsIPv4(ps []Prefix) (lastBF, lastN int) {
 		lastBF = bf
 		lastN = n
 	}
-	return lastBF, lastN
+	n := 1 << uint(lastBF)
+	return n, lastN >= n
 }
 
-// branchingFactorsIPv6 returns a branching factor and a number of
-// containing prefixes.
-func branchingFactorsIPv6(ps []Prefix) (lastBF, lastN int) {
-	x := ipToIPv6Int(ps[0].IP)
-	m := ipMaskToIPv6Int(ps[0].Mask)
+// branchingFactorsIPv6 returns a branching factor.
+func branchingFactorsIPv6(ps []Prefix) (int, bool) {
+	var lastBF, lastN int
+	base := ipToIPv6Int(ps[0].IP)
+	mask := ipMaskToIPv6Int(ps[0].Mask)
 	l := ps[0].Len()
 	for bf := 1; bf < IPv6PrefixLen; bf++ {
 		n, nfull := 0, 1<<uint(bf)
 		pat, max := ipv6Int{0, 0}, ipv6Int{0, 1}
 		max.lsh(bf)
-		var maggr ipv6Int
-		maggr.mask(l - bf)
+		var aggrMask ipv6Int
+		aggrMask.mask(l - bf)
 		for ; pat.cmp(&max) < 0; pat.incr() {
 			npat := pat
 			npat.lsh(IPv6PrefixLen - l)
 			var aggr ipv6Int
-			aggr[0], aggr[1] = x[0]&maggr[0]|npat[0], x[1]&maggr[1]|npat[1]
+			aggr[0], aggr[1] = base[0]&aggrMask[0]|npat[0], base[1]&aggrMask[1]|npat[1]
 			for _, p := range ps {
-				y := ipToIPv6Int(p.IP)
-				if aggr[0] == y[0]&m[0] && aggr[1] == y[1]&m[1] {
+				i := ipToIPv6Int(p.IP)
+				if aggr[0] == i[0]&mask[0] && aggr[1] == i[1]&mask[1] {
 					n++
 				}
 			}
@@ -343,7 +355,8 @@ func branchingFactorsIPv6(ps []Prefix) (lastBF, lastN int) {
 		lastBF = bf
 		lastN = n
 	}
-	return lastBF, lastN
+	n := 1 << uint(lastBF)
+	return n, lastN >= n
 }
 
 // Compare returns an integer comparing two prefixes.
@@ -441,10 +454,10 @@ func Supernet(ps []Prefix) *Prefix {
 		return nil
 	}
 	if ps[0].IP.To4() != nil {
-		ps = byAddrFamily(ps).ipv4Only()
+		ps = byAddrFamily(ps).newIPv4Prefixes()
 	}
 	if ps[0].IP.To16() != nil && ps[0].IP.To4() == nil {
-		ps = byAddrFamily(ps).ipv6Only()
+		ps = byAddrFamily(ps).newIPv6Prefixes()
 	}
 	if len(ps) == 0 {
 		return nil
