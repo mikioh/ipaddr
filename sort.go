@@ -80,19 +80,14 @@ func newSortedPrefixes(ps []Prefix, dir sortDir, strict bool) []Prefix {
 	if strict {
 		if ps[0].IP.To4() != nil {
 			ps = byAddrFamily(ps).newIPv4Prefixes()
-			if dir == sortAscending {
-				sort.Sort(byAscending(ps))
-			} else {
-				sort.Sort(byDescending(ps))
-			}
 		}
 		if ps[0].IP.To16() != nil && ps[0].IP.To4() == nil {
 			ps = byAddrFamily(ps).newIPv6Prefixes()
-			if dir == sortAscending {
-				sort.Sort(byAscending(ps))
-			} else {
-				sort.Sort(byDescending(ps))
-			}
+		}
+		if dir == sortAscending {
+			sort.Sort(byAscending(ps))
+		} else {
+			sort.Sort(byDescending(ps))
 		}
 	} else {
 		nps := make([]Prefix, 0, len(ps))
@@ -108,14 +103,14 @@ func newSortedPrefixes(ps []Prefix, dir sortDir, strict bool) []Prefix {
 		ps = nps
 	}
 	nps := ps[:0]
-	var prev *Prefix
+	var p *Prefix
 	for i := range ps {
-		if prev == nil {
+		if p == nil {
 			nps = append(nps, ps[i])
-		} else if !prev.Equal(&ps[i]) {
+		} else if !p.Equal(&ps[i]) {
 			nps = append(nps, ps[i])
 		}
-		prev = &ps[i]
+		p = &ps[i]
 	}
 	return nps
 }

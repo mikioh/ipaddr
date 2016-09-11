@@ -66,19 +66,19 @@ func (p *Prefix) Exclude(q *Prefix) []Prefix {
 	if p.Equal(q) {
 		return []Prefix{*q}
 	}
-	subnets := subnetsIPv6
+	subsFn := subnetsIPv6
 	if p.IP.To4() != nil {
-		subnets = subnetsIPv4
+		subsFn = subnetsIPv4
 	}
 	var ps []Prefix
-	l, r := subnets(p, false)
+	l, r := subsFn(p, false)
 	for !l.Equal(q) && !r.Equal(q) {
 		if l.Contains(q.IP) {
 			ps = append(ps, *r)
-			l, r = subnets(l, true)
+			l, r = subsFn(l, true)
 		} else if r.Contains(q.IP) {
 			ps = append(ps, *l)
-			l, r = subnets(r, true)
+			l, r = subsFn(r, true)
 		}
 	}
 	if l.Equal(q) {
@@ -90,23 +90,22 @@ func (p *Prefix) Exclude(q *Prefix) []Prefix {
 }
 
 func subnetsIPv4(p *Prefix, reuse bool) (l *Prefix, r *Prefix) {
-	ii := ipToIPv4Int(p.IP) | ipv4Int(1<<uint(IPv4PrefixLen-p.Len()-1))
-	r = ii.prefix(p.Len()+1, IPv4PrefixLen)
+	i := ipToIPv4Int(p.IP) | ipv4Int(1<<uint(IPv4PrefixLen-p.Len()-1))
+	r = i.prefix(p.Len()+1, IPv4PrefixLen)
 	if reuse {
 		l = p
 		binary.BigEndian.PutUint32(l.Mask, mask32(l.Len()+1))
 	} else {
-		ii := ipToIPv4Int(p.IP)
-		l = ii.prefix(p.Len()+1, IPv4PrefixLen)
+		l = ipToIPv4Int(p.IP).prefix(p.Len()+1, IPv4PrefixLen)
 	}
 	return
 }
 
 func subnetsIPv6(p *Prefix, reuse bool) (l *Prefix, r *Prefix) {
-	x := ipToIPv6Int(p.IP)
+	i := ipToIPv6Int(p.IP)
 	id := ipv6Int{0, 1}
 	id.lsh(IPv6PrefixLen - p.Len() - 1)
-	ii := ipv6Int{x[0] | id[0], x[1] | id[1]}
+	ii := ipv6Int{i[0] | id[0], i[1] | id[1]}
 	r = ii.prefix(p.Len()+1, IPv6PrefixLen)
 	if reuse {
 		l = p
@@ -115,7 +114,7 @@ func subnetsIPv6(p *Prefix, reuse bool) (l *Prefix, r *Prefix) {
 		binary.BigEndian.PutUint64(l.Mask[:8], m[0])
 		binary.BigEndian.PutUint64(l.Mask[8:16], m[1])
 	} else {
-		l = x.prefix(p.Len()+1, IPv6PrefixLen)
+		l = i.prefix(p.Len()+1, IPv6PrefixLen)
 	}
 	return
 }
@@ -252,9 +251,9 @@ func Aggregate(ps []Prefix) []Prefix {
 	case 1:
 		return ps[:1]
 	}
-	bfFn, superFn := branchingFactorsIPv6, supernetIPv6
+	bfFn, superFn := branchingFactorIPv6, supernetIPv6
 	if ps[0].IP.To4() != nil {
-		bfFn, superFn = branchingFactorsIPv4, supernetIPv4
+		bfFn, superFn = branchingFactorIPv4, supernetIPv4
 	}
 	var lastAggr *Prefix
 	var djnts, aggrs []Prefix
@@ -296,8 +295,7 @@ func Aggregate(ps []Prefix) []Prefix {
 	return aggrs
 }
 
-// branchingFactorsIPv4 returns a branching factor.
-func branchingFactorsIPv4(ps []Prefix) (int, bool) {
+func branchingFactorIPv4(ps []Prefix) (int, bool) {
 	var lastBF, lastN int
 	base := ipToIPv4Int(ps[0].IP.Mask(ps[0].Mask))
 	mask := ipMaskToIPv4Int(ps[0].Mask)
@@ -325,8 +323,7 @@ func branchingFactorsIPv4(ps []Prefix) (int, bool) {
 	return n, lastN >= n
 }
 
-// branchingFactorsIPv6 returns a branching factor.
-func branchingFactorsIPv6(ps []Prefix) (int, bool) {
+func branchingFactorIPv6(ps []Prefix) (int, bool) {
 	var lastBF, lastN int
 	base := ipToIPv6Int(ps[0].IP)
 	mask := ipMaskToIPv6Int(ps[0].Mask)
@@ -472,12 +469,12 @@ func Supernet(ps []Prefix) *Prefix {
 }
 
 func supernetIPv4(ps []Prefix) *Prefix {
-	x := ipToIPv4Int(ps[0].IP.Mask(ps[0].Mask))
-	m := ipMaskToIPv4Int(ps[0].Mask)
+	base := ipToIPv4Int(ps[0].IP.Mask(ps[0].Mask))
+	mask := ipMaskToIPv4Int(ps[0].Mask)
 	n := ps[0].Len()
 	for _, p := range ps[1:] {
-		y := ipToIPv4Int(p.IP)
-		if diff := uint32((x ^ y) & m); diff != 0 {
+		i := ipToIPv4Int(p.IP)
+		if diff := uint32((base ^ i) & mask); diff != 0 {
 			if l := nlz32(diff); l < n {
 				n = l
 			}
@@ -490,13 +487,13 @@ func supernetIPv4(ps []Prefix) *Prefix {
 }
 
 func supernetIPv6(ps []Prefix) *Prefix {
-	x := ipToIPv6Int(ps[0].IP.Mask(ps[0].Mask))
-	m := ipMaskToIPv6Int(ps[0].Mask)
+	base := ipToIPv6Int(ps[0].IP.Mask(ps[0].Mask))
+	mask := ipMaskToIPv6Int(ps[0].Mask)
 	n := ps[0].Len()
 	var diff ipv6Int
 	for _, p := range ps[1:] {
-		y := ipToIPv6Int(p.IP)
-		diff[0], diff[1] = (x[0]^y[0])&m[0], (x[1]^y[1])&m[1]
+		i := ipToIPv6Int(p.IP)
+		diff[0], diff[1] = (base[0]^i[0])&mask[0], (base[1]^i[1])&mask[1]
 		if diff[0] != 0 {
 			if l := nlz64(diff[0]); l < n {
 				n = l

@@ -13,9 +13,8 @@ import (
 // prefixes.
 type Cursor struct {
 	curr, start, end ipv6Int
-
-	pi int
-	ps []Prefix
+	pi               int
+	ps               []Prefix
 }
 
 func (c *Cursor) set(pi int, ip net.IP) {
@@ -132,7 +131,7 @@ func NewCursor(ps []Prefix) *Cursor {
 	if len(ps) == 0 {
 		return nil
 	}
-	c := Cursor{ps: ps}
+	c := &Cursor{ps: ps}
 	c.set(0, c.ps[0].IP.To16())
-	return &c
+	return c
 }

@@ -68,6 +68,5 @@ func parse(s string) (*Position, *Prefix, error) {
 		m = net.CIDRMask(IPv6PrefixLen, IPv6PrefixLen)
 	}
 	p := NewPrefix(&net.IPNet{IP: ip, Mask: m})
-	pos := Position{IP: ip, Prefix: *p}
-	return &pos, p, nil
+	return &Position{IP: ip, Prefix: *p}, p, nil
 }
