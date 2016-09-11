@@ -12,7 +12,12 @@ import (
 )
 
 func BenchmarkAggregateIPv4(b *testing.B) {
-	in := toPrefixes([]string{"192.168.0.0/24", "192.168.1.0/24", "192.168.2.0/24", "192.168.3.0/24", "192.168.4.0/25", "192.168.101.0/26", "192.168.102.1/27"})
+	in := toPrefixes([]string{
+		"192.168.0.0/24", "192.168.1.0/24", "192.168.2.0/24", "192.168.3.0/24",
+		"192.168.4.0/25",
+		"192.168.101.0/26",
+		"192.168.102.1/27",
+	})
 
 	for i := 0; i < b.N; i++ {
 		ipaddr.Aggregate(in)
@@ -20,7 +25,10 @@ func BenchmarkAggregateIPv4(b *testing.B) {
 }
 
 func BenchmarkAggregateIPv6(b *testing.B) {
-	in := toPrefixes([]string{"2001:db8::/64", "2001:db8:0:1::/64", "2001:db8:0:2::/64", "2001:db8:0:3::/64", "2001:db8:0:4::/64", "2001:db8::/64", "2001:db8::1/64"})
+	in := toPrefixes([]string{
+		"2001:db8::/64", "2001:db8:0:1::/64", "2001:db8:0:2::/64", "2001:db8:0:3::/64",
+		"2001:db8:0:4::/64", "2001:db8::/64", "2001:db8::1/64",
+	})
 
 	for i := 0; i < b.N; i++ {
 		ipaddr.Aggregate(in)
@@ -28,8 +36,7 @@ func BenchmarkAggregateIPv6(b *testing.B) {
 }
 
 func BenchmarkCompareIPv4(b *testing.B) {
-	p1 := toPrefix("192.168.1.0/24")
-	p2 := toPrefix("192.168.2.0/24")
+	p1, p2 := toPrefix("192.168.1.0/24"), toPrefix("192.168.2.0/24")
 
 	for i := 0; i < b.N; i++ {
 		ipaddr.Compare(p1, p2)
@@ -37,8 +44,7 @@ func BenchmarkCompareIPv4(b *testing.B) {
 }
 
 func BenchmarkCompareIPv6(b *testing.B) {
-	p1 := toPrefix("2001:db8:f001:f002::/64")
-	p2 := toPrefix("2001:db8:f001:f003::/64")
+	p1, p2 := toPrefix("2001:db8:f001:f002::/64"), toPrefix("2001:db8:f001:f003::/64")
 
 	for i := 0; i < b.N; i++ {
 		ipaddr.Compare(p1, p2)
@@ -62,7 +68,10 @@ func BenchmarkSummarizeIPv6(b *testing.B) {
 }
 
 func BenchmarkSupernetIPv4(b *testing.B) {
-	in := toPrefixes([]string{"192.168.0.0/24", "192.168.1.0/24", "192.168.2.0/24", "192.168.3.0/24", "192.168.4.0/25", "192.168.101.0/26", "192.168.102.1/27"})
+	in := toPrefixes([]string{
+		"192.168.0.0/24", "192.168.1.0/24", "192.168.2.0/24", "192.168.3.0/24",
+		"192.168.4.0/25", "192.168.101.0/26", "192.168.102.1/27",
+	})
 
 	for i := 0; i < b.N; i++ {
 		ipaddr.Supernet(in)
@@ -70,7 +79,10 @@ func BenchmarkSupernetIPv4(b *testing.B) {
 }
 
 func BenchmarkSupernetIPv6(b *testing.B) {
-	in := toPrefixes([]string{"2001:db8::/64", "2001:db8:0:1::/64", "2001:db8:0:2::/64", "2001:db8:0:3::/64", "2001:db8:0:4::/64", "2001:db8::/64", "2001:db8::1/64"})
+	in := toPrefixes([]string{
+		"2001:db8::/64", "2001:db8:0:1::/64", "2001:db8:0:2::/64", "2001:db8:0:3::/64",
+		"2001:db8:0:4::/64", "2001:db8::/64", "2001:db8::1/64",
+	})
 
 	for i := 0; i < b.N; i++ {
 		ipaddr.Supernet(in)
@@ -134,8 +146,7 @@ func BenchmarkPrefixEqualIPv6(b *testing.B) {
 }
 
 func BenchmarkPrefixExcludeIPv4(b *testing.B) {
-	p1 := toPrefix("10.1.0.0/16")
-	p2 := toPrefix("10.1.1.1/32")
+	p1, p2 := toPrefix("10.1.0.0/16"), toPrefix("10.1.1.1/32")
 
 	for i := 0; i < b.N; i++ {
 		p1.Exclude(p2)
@@ -143,8 +154,7 @@ func BenchmarkPrefixExcludeIPv4(b *testing.B) {
 }
 
 func BenchmarkPrefixExcludeIPv6(b *testing.B) {
-	p1 := toPrefix("2001:db8::/64")
-	p2 := toPrefix("2001:db8::1:1:1:1/128")
+	p1, p2 := toPrefix("2001:db8::/64"), toPrefix("2001:db8::1:1:1:1/128")
 
 	for i := 0; i < b.N; i++ {
 		p1.Exclude(p2)
@@ -184,8 +194,7 @@ func BenchmarkPrefixMarshalTextIPv6(b *testing.B) {
 }
 
 func BenchmarkPrefixOverlapsIPv4(b *testing.B) {
-	p1 := toPrefix("192.168.1.0/24")
-	p2 := toPrefix("192.168.2.0/24")
+	p1, p2 := toPrefix("192.168.1.0/24"), toPrefix("192.168.2.0/24")
 
 	for i := 0; i < b.N; i++ {
 		p1.Overlaps(p2)
@@ -193,8 +202,7 @@ func BenchmarkPrefixOverlapsIPv4(b *testing.B) {
 }
 
 func BenchmarkPrefixOverlapsIPv6(b *testing.B) {
-	p1 := toPrefix("2001:db8:f001:f002::/64")
-	p2 := toPrefix("2001:db8:f001:f003::/64")
+	p1, p2 := toPrefix("2001:db8:f001:f002::/64"), toPrefix("2001:db8:f001:f003::/64")
 
 	for i := 0; i < b.N; i++ {
 		p1.Overlaps(p2)
