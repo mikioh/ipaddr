@@ -456,10 +456,10 @@ func Supernet(ps []Prefix) *Prefix {
 	if ps[0].IP.To16() != nil && ps[0].IP.To4() == nil {
 		ps = byAddrFamily(ps).newIPv6Prefixes()
 	}
-	if len(ps) == 0 {
+	switch len(ps) {
+	case 0:
 		return nil
-	}
-	if len(ps) == 1 {
+	case 1:
 		return &ps[0]
 	}
 	if ps[0].IP.To4() != nil {
