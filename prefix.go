@@ -257,6 +257,7 @@ func Aggregate(ps []Prefix) []Prefix {
 	}
 	var lastAggr *Prefix
 	var djnts, aggrs []Prefix
+	cands := make([]Prefix, 0, len(ps))
 	for len(ps) > 0 {
 		l := ps[0].Len()
 		if l == 0 {
@@ -264,7 +265,7 @@ func Aggregate(ps []Prefix) []Prefix {
 			ps = ps[1:]
 			continue
 		}
-		cands := make([]Prefix, 0, len(ps))
+		cands = cands[:0]
 		for i := range ps {
 			if ps[i].Len() != l {
 				break
