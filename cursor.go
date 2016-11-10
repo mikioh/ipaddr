@@ -39,7 +39,7 @@ func (c *Cursor) Last() *Position {
 	return &Position{IP: c.ps[len(c.ps)-1].Last(), Prefix: c.ps[len(c.ps)-1]}
 }
 
-// List returns a list of prefixes on the cursor c.
+// List returns the list of prefixes on the cursor c.
 func (c *Cursor) List() []Prefix {
 	return c.ps
 }
