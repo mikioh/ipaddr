@@ -2,8 +2,6 @@ version: "{build}"
 
 branches:
   only:
-    - release-branch.go1.7
-    - release-branch.go1.8
     - master
 
 environment:
