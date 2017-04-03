@@ -6,15 +6,7 @@
 
 package ipaddr
 
-func mask32(nbits int) uint32 {
-	return -uint32(1 << uint(32-nbits))
-}
-
-func mask64(nbits int) uint64 {
-	return -uint64(1 << uint(64-nbits))
-}
-
-func nlz32(bs uint32) int {
+func leadingZeros32(bs uint32) int {
 	bs |= bs >> 1
 	bs |= bs >> 2
 	bs |= bs >> 4
@@ -23,7 +15,7 @@ func nlz32(bs uint32) int {
 	return npop32(^bs)
 }
 
-func nlz64(bs uint64) int {
+func leadingZeros64(bs uint64) int {
 	bs |= bs >> 1
 	bs |= bs >> 2
 	bs |= bs >> 4

@@ -476,7 +476,7 @@ func supernetIPv4(ps []Prefix) *Prefix {
 	for _, p := range ps[1:] {
 		i := ipToIPv4Int(p.IP)
 		if diff := uint32((base ^ i) & mask); diff != 0 {
-			if l := nlz32(diff); l < n {
+			if l := leadingZeros32(diff); l < n {
 				n = l
 			}
 		}
@@ -496,11 +496,11 @@ func supernetIPv6(ps []Prefix) *Prefix {
 		i := ipToIPv6Int(p.IP)
 		diff[0], diff[1] = (base[0]^i[0])&mask[0], (base[1]^i[1])&mask[1]
 		if diff[0] != 0 {
-			if l := nlz64(diff[0]); l < n {
+			if l := leadingZeros64(diff[0]); l < n {
 				n = l
 			}
 		} else if diff[1] != 0 {
-			if l := nlz64(diff[1]); 64+l < n {
+			if l := leadingZeros64(diff[1]); 64+l < n {
 				n = 64 + l
 			}
 		}
