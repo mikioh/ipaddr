@@ -7,7 +7,6 @@ package ipaddr
 import (
 	"bytes"
 	"net"
-	"sort"
 )
 
 type byAddrFamily []Prefix
@@ -34,33 +33,11 @@ func (ps byAddrFamily) newIPv6Prefixes() []Prefix {
 	return nps
 }
 
-type byAscending []Prefix
-
-func (ps byAscending) Len() int           { return len(ps) }
-func (ps byAscending) Less(i, j int) bool { return compareAscending(&ps[i], &ps[j]) < 0 }
-func (ps byAscending) Swap(i, j int)      { ps[i], ps[j] = ps[j], ps[i] }
-
 func compareAscending(a, b *Prefix) int {
 	if n := bytes.Compare(a.IP, b.IP); n != 0 {
 		return n
 	}
 	if n := bytes.Compare(a.Mask, b.Mask); n != 0 {
-		return n
-	}
-	return 0
-}
-
-type byDescending []Prefix
-
-func (ps byDescending) Len() int           { return len(ps) }
-func (ps byDescending) Less(i, j int) bool { return compareDescending(&ps[i], &ps[j]) >= 0 }
-func (ps byDescending) Swap(i, j int)      { ps[i], ps[j] = ps[j], ps[i] }
-
-func compareDescending(a, b *Prefix) int {
-	if n := bytes.Compare(a.Mask, b.Mask); n != 0 {
-		return n
-	}
-	if n := bytes.Compare(a.IP, b.IP); n != 0 {
 		return n
 	}
 	return 0
@@ -85,9 +62,9 @@ func newSortedPrefixes(ps []Prefix, dir sortDir, strict bool) []Prefix {
 			ps = byAddrFamily(ps).newIPv6Prefixes()
 		}
 		if dir == sortAscending {
-			sort.Sort(byAscending(ps))
+			sortByAscending(ps)
 		} else {
-			sort.Sort(byDescending(ps))
+			sortByDescending(ps)
 		}
 	} else {
 		nps := make([]Prefix, 0, len(ps))
@@ -96,9 +73,9 @@ func newSortedPrefixes(ps []Prefix, dir sortDir, strict bool) []Prefix {
 			nps = append(nps, *np)
 		}
 		if dir == sortAscending {
-			sort.Sort(byAscending(nps))
+			sortByAscending(nps)
 		} else {
-			sort.Sort(byDescending(nps))
+			sortByDescending(nps)
 		}
 		ps = nps
 	}

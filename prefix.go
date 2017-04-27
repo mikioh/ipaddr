@@ -11,7 +11,6 @@ import (
 	"math"
 	"math/big"
 	"net"
-	"sort"
 )
 
 var (
@@ -292,7 +291,7 @@ func Aggregate(ps []Prefix) []Prefix {
 		lastAggr = aggr
 	}
 	aggrs = append(aggrs, djnts...)
-	sort.Sort(byAscending(aggrs))
+	sortByAscending(aggrs)
 	return aggrs
 }
 
