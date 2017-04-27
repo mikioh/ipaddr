@@ -24,218 +24,232 @@ var (
 		"2001:db8:0:4::/64", "2001:db8:0:5::/64", "2001:db8:0:6::/64", "2001:db8:0:7::/64",
 		"2001:db8:cafe::/64", "2001:db8:babe::/64",
 	})
-	ipv4Pair = []*ipaddr.Prefix{toPrefix("192.0.2.0/25"), toPrefix("192.0.2.128/25")}
-	ipv6Pair = []*ipaddr.Prefix{toPrefix("2001:db8:f001:f002::/64"), toPrefix("2001:db8:f001:f003::/64")}
 )
 
-func BenchmarkAggregateIPv4(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		ipaddr.Aggregate(aggregatablePrefixesIPv4)
+func BenchmarkAggregate(b *testing.B) {
+	for _, bb := range []struct {
+		name string
+		ps   []ipaddr.Prefix
+	}{
+		{"IPv4", aggregatablePrefixesIPv4},
+		{"IPv6", aggregatablePrefixesIPv6},
+	} {
+		b.Run(bb.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				ipaddr.Aggregate(bb.ps)
+			}
+		})
 	}
 }
 
-func BenchmarkAggregateIPv6(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		ipaddr.Aggregate(aggregatablePrefixesIPv6)
+func BenchmarkCompare(b *testing.B) {
+	for _, bb := range []struct {
+		name   string
+		px, py *ipaddr.Prefix
+	}{
+		{"IPv4", toPrefix("192.0.2.0/25"), toPrefix("192.0.2.128/25")},
+		{"IPv6", toPrefix("2001:db8:f001:f002::/64"), toPrefix("2001:db8:f001:f003::/64")},
+	} {
+		b.Run(bb.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				ipaddr.Compare(bb.px, bb.py)
+			}
+		})
 	}
 }
 
-func BenchmarkCompareIPv4(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		ipaddr.Compare(ipv4Pair[0], ipv4Pair[1])
+func BenchmarkSummarize(b *testing.B) {
+	for _, bb := range []struct {
+		name     string
+		fip, lip net.IP
+	}{
+		{"IPv4", net.IPv4(192, 0, 2, 1), net.IPv4(192, 0, 2, 255)},
+		{"IPv6", net.ParseIP("2001:db8::1"), net.ParseIP("2001:db8::00ff")},
+	} {
+		b.Run(bb.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				ipaddr.Summarize(bb.fip, bb.lip)
+			}
+		})
 	}
 }
 
-func BenchmarkCompareIPv6(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		ipaddr.Compare(ipv6Pair[0], ipv6Pair[1])
+func BenchmarkSupernet(b *testing.B) {
+	for _, bb := range []struct {
+		name string
+		ps   []ipaddr.Prefix
+	}{
+		{"IPv4", aggregatablePrefixesIPv4},
+		{"IPv6", aggregatablePrefixesIPv6},
+	} {
+		b.Run(bb.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				ipaddr.Supernet(bb.ps)
+			}
+		})
 	}
 }
 
-func BenchmarkSummarizeIPv4(b *testing.B) {
-	fip, lip := net.IPv4(192, 0, 2, 1), net.IPv4(192, 0, 2, 255)
-
-	for i := 0; i < b.N; i++ {
-		ipaddr.Summarize(fip, lip)
+func BenchmarkCursorNext(b *testing.B) {
+	for _, bb := range []struct {
+		name string
+		c    *ipaddr.Cursor
+	}{
+		{"IPv4", ipaddr.NewCursor(toPrefixes([]string{"192.0.2.0/24"}))},
+		{"IPv6", ipaddr.NewCursor(toPrefixes([]string{"2001:db8::/120"}))},
+	} {
+		b.Run(bb.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				for bb.c.Next() != nil {
+				}
+			}
+		})
 	}
 }
 
-func BenchmarkSummarizeIPv6(b *testing.B) {
-	fip, lip := net.ParseIP("2001:db8::1"), net.ParseIP("2001:db8::00ff")
-
-	for i := 0; i < b.N; i++ {
-		ipaddr.Summarize(fip, lip)
+func BenchmarkCursorPrev(b *testing.B) {
+	for _, bb := range []struct {
+		name string
+		c    *ipaddr.Cursor
+	}{
+		{"IPv4", ipaddr.NewCursor(toPrefixes([]string{"192.0.2.255/24"}))},
+		{"IPv6", ipaddr.NewCursor(toPrefixes([]string{"2001:db8::ff/120"}))},
+	} {
+		b.Run(bb.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				for bb.c.Prev() != nil {
+				}
+			}
+		})
 	}
 }
 
-func BenchmarkSupernetIPv4(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		ipaddr.Supernet(aggregatablePrefixesIPv4)
+func BenchmarkPrefixEqual(b *testing.B) {
+	for _, bb := range []struct {
+		name   string
+		px, py *ipaddr.Prefix
+	}{
+		{"IPv4", toPrefix("192.0.2.0/25"), toPrefix("192.0.2.128/25")},
+		{"IPv6", toPrefix("2001:db8:f001:f002::/64"), toPrefix("2001:db8:f001:f003::/64")},
+	} {
+		b.Run(bb.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				bb.px.Equal(bb.py)
+			}
+		})
 	}
 }
 
-func BenchmarkSupernetIPv6(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		ipaddr.Supernet(aggregatablePrefixesIPv6)
+func BenchmarkPrefixExclude(b *testing.B) {
+	for _, bb := range []struct {
+		name   string
+		px, py *ipaddr.Prefix
+	}{
+		{"IPv4", toPrefix("192.0.2.0/24"), toPrefix("192.0.2.192/32")},
+		{"IPv6", toPrefix("2001:db8::/120"), toPrefix("2001:db8::1/128")},
+	} {
+		b.Run(bb.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				bb.px.Exclude(bb.py)
+			}
+		})
 	}
 }
 
-func BenchmarkCursorNextIPv4(b *testing.B) {
-	ps := toPrefixes([]string{"192.0.2.0/24"})
-	c := ipaddr.NewCursor(ps)
-
-	for i := 0; i < b.N; i++ {
-		for c.Next() != nil {
-		}
+func BenchmarkPrefixMarshalBinary(b *testing.B) {
+	for _, bb := range []struct {
+		name string
+		p    *ipaddr.Prefix
+	}{
+		{"IPv4", toPrefix("192.0.2.0/31")},
+		{"IPv6", toPrefix("2001:db8:cafe:babe::/127")},
+	} {
+		b.Run(bb.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				bb.p.MarshalBinary()
+			}
+		})
 	}
 }
 
-func BenchmarkCursorNextIPv6(b *testing.B) {
-	ps := toPrefixes([]string{"2001:db8::/120"})
-	c := ipaddr.NewCursor(ps)
-
-	for i := 0; i < b.N; i++ {
-		for c.Next() != nil {
-		}
+func BenchmarkPrefixMarshalText(b *testing.B) {
+	for _, bb := range []struct {
+		name string
+		p    *ipaddr.Prefix
+	}{
+		{"IPv4", toPrefix("192.0.2.0/31")},
+		{"IPv6", toPrefix("2001:db8:cafe:babe::/127")},
+	} {
+		b.Run(bb.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				bb.p.MarshalText()
+			}
+		})
 	}
 }
 
-func BenchmarkCursorPrevIPv4(b *testing.B) {
-	ps := toPrefixes([]string{"192.0.2.255/24"})
-	c := ipaddr.NewCursor(ps)
-
-	for i := 0; i < b.N; i++ {
-		for c.Prev() != nil {
-		}
+func BenchmarkPrefixOverlaps(b *testing.B) {
+	for _, bb := range []struct {
+		name   string
+		px, py *ipaddr.Prefix
+	}{
+		{"IPv4", toPrefix("192.0.2.0/25"), toPrefix("192.0.2.128/25")},
+		{"IPv6", toPrefix("2001:db8:f001:f002::/64"), toPrefix("2001:db8:f001:f003::/64")},
+	} {
+		b.Run(bb.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				bb.px.Overlaps(bb.py)
+			}
+		})
 	}
 }
 
-func BenchmarkCursorPrevIPv6(b *testing.B) {
-	ps := toPrefixes([]string{"2001:db8::ff/120"})
-	c := ipaddr.NewCursor(ps)
-
-	for i := 0; i < b.N; i++ {
-		for c.Prev() != nil {
-		}
+func BenchmarkPrefixSubnets(b *testing.B) {
+	for _, bb := range []struct {
+		name string
+		p    *ipaddr.Prefix
+	}{
+		{"IPv4", toPrefix("192.0.2.0/24")},
+		{"IPv6", toPrefix("2001:db8::/32")},
+	} {
+		b.Run(bb.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				bb.p.Subnets(3)
+			}
+		})
 	}
 }
 
-func BenchmarkPrefixEqualIPv4(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		ipv4Pair[0].Equal(ipv4Pair[1])
-	}
-}
-
-func BenchmarkPrefixEqualIPv6(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		ipv6Pair[0].Equal(ipv6Pair[1])
-	}
-}
-
-func BenchmarkPrefixExcludeIPv4(b *testing.B) {
-	p1, p2 := toPrefix("192.0.2.0/24"), toPrefix("192.0.2.192/32")
-
-	for i := 0; i < b.N; i++ {
-		p1.Exclude(p2)
-	}
-}
-
-func BenchmarkPrefixExcludeIPv6(b *testing.B) {
-	p1, p2 := toPrefix("2001:db8::/120"), toPrefix("2001:db8::1/128")
-
-	for i := 0; i < b.N; i++ {
-		p1.Exclude(p2)
-	}
-}
-
-func BenchmarkPrefixMarshalBinaryIPv4(b *testing.B) {
-	p := toPrefix("192.0.2.0/31")
-
-	for i := 0; i < b.N; i++ {
-		p.MarshalBinary()
-	}
-}
-
-func BenchmarkPrefixMarshalBinaryIPv6(b *testing.B) {
-	p := toPrefix("2001:db8:cafe:babe::/127")
-
-	for i := 0; i < b.N; i++ {
-		p.MarshalBinary()
-	}
-}
-
-func BenchmarkPrefixMarshalTextIPv4(b *testing.B) {
-	p := toPrefix("192.0.2.0/31")
-
-	for i := 0; i < b.N; i++ {
-		p.MarshalText()
-	}
-}
-
-func BenchmarkPrefixMarshalTextIPv6(b *testing.B) {
-	p := toPrefix("2001:db8:cafe:babe::/127")
-
-	for i := 0; i < b.N; i++ {
-		p.MarshalText()
-	}
-}
-
-func BenchmarkPrefixOverlapsIPv4(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		ipv4Pair[0].Overlaps(ipv4Pair[1])
-	}
-}
-
-func BenchmarkPrefixOverlapsIPv6(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		ipv6Pair[0].Overlaps(ipv6Pair[1])
-	}
-}
-
-func BenchmarkPrefixSubnetsIPv4(b *testing.B) {
-	p := toPrefix("192.0.2.0/24")
-
-	for i := 0; i < b.N; i++ {
-		p.Subnets(3)
-	}
-}
-
-func BenchmarkPrefixSubnetsIPv6(b *testing.B) {
-	p := toPrefix("2001:db8::/32")
-
-	for i := 0; i < b.N; i++ {
-		p.Subnets(3)
-	}
-}
-
-func BenchmarkPrefixUnmarshalBinaryIPv4(b *testing.B) {
-	p := toPrefix("0.0.0.0/0")
-
-	for i := 0; i < b.N; i++ {
-		p.UnmarshalBinary([]byte{22, 192, 168, 0})
-	}
-}
-
-func BenchmarkPrefixUnmarshalBinaryIPv6(b *testing.B) {
-	p := toPrefix("::/0")
-
-	for i := 0; i < b.N; i++ {
-		p.UnmarshalBinary([]byte{66, 0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0xca, 0xfe, 0x80})
+func BenchmarkPrefixUnmarshalBinary(b *testing.B) {
+	for _, bb := range []struct {
+		name string
+		p    *ipaddr.Prefix
+		nlri []byte
+	}{
+		{"IPv4", toPrefix("0.0.0.0/0"), []byte{22, 192, 168, 0}},
+		{"IPv6", toPrefix("::/0"), []byte{66, 0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0xca, 0xfe, 0x80}},
+	} {
+		b.Run(bb.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				bb.p.UnmarshalBinary(bb.nlri)
+			}
+		})
 	}
 }
 
 func BenchmarkPrefixUnmarshalTextIPv4(b *testing.B) {
-	p := toPrefix("0.0.0.0/0")
-
-	for i := 0; i < b.N; i++ {
-		p.UnmarshalText([]byte("192.168.0.0/31"))
-	}
-}
-
-func BenchmarkPrefixUnmarshalTextIPv6(b *testing.B) {
-	p := toPrefix("::/0")
-
-	for i := 0; i < b.N; i++ {
-		p.UnmarshalText([]byte("2001:db8:cafe:babe::/127"))
+	for _, bb := range []struct {
+		name string
+		p    *ipaddr.Prefix
+		lit  []byte
+	}{
+		{"IPv4", toPrefix("0.0.0.0/0"), []byte("192.168.0.0/31")},
+		{"IPv6", toPrefix("::/0"), []byte("2001:db8:cafe:babe::/127")},
+	} {
+		b.Run(bb.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				bb.p.UnmarshalText(bb.lit)
+			}
+		})
 	}
 }
