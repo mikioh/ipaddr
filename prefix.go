@@ -254,13 +254,27 @@ func Aggregate(ps []Prefix) []Prefix {
 	if ps[0].IP.To4() != nil {
 		bfFn, superFn = branchingFactorIPv4, supernetIPv4
 	}
-	var lastAggr *Prefix
-	var djnts, aggrs []Prefix
+	for {
+		var cont bool
+		ps, cont = aggregate(ps, bfFn, superFn)
+		sortByDescending(ps)
+		if !cont {
+			break
+		}
+	}
+	ps = aggregateAggrs(ps)
+	sortByAscending(ps)
+	return ps
+}
+
+func aggregate(ps []Prefix, bfFn func([]Prefix) (int, bool), superFn func([]Prefix) *Prefix) ([]Prefix, bool) {
+	var cont bool
+	aggrs := ps[:0]
 	cands := make([]Prefix, 0, len(ps))
 	for len(ps) > 0 {
 		l := ps[0].Len()
 		if l == 0 {
-			djnts = append(djnts, ps[0])
+			aggrs = append(aggrs, ps[0])
 			ps = ps[1:]
 			continue
 		}
@@ -271,27 +285,36 @@ func Aggregate(ps []Prefix) []Prefix {
 			}
 			cands = append(cands, ps[i])
 		}
-		if lastAggr != nil && lastAggr.Len() == l {
-			cands = append([]Prefix{*lastAggr}, cands...)
-		}
-		n, ok := bfFn(cands)
-		if !ok {
-			djnts = append(djnts, ps[0])
+		if n, ok := bfFn(cands); !ok {
+			aggrs = append(aggrs, ps[0])
 			ps = ps[1:]
+		} else {
+			aggrs = append(aggrs, *superFn(cands[:n]))
+			ps = ps[n:]
+			cont = true
+		}
+	}
+	return aggrs, cont
+}
+
+func aggregateAggrs(ps []Prefix) []Prefix {
+	aggrs := ps[:0]
+	for i := range ps {
+		var aggregatable bool
+		for j := len(ps) - 1; j >= 0; j-- {
+			if i == j {
+				continue
+			}
+			if ps[j].Contains(ps[i].IP) && ps[j].Contains(ps[i].Last()) {
+				aggregatable = true
+				break
+			}
+		}
+		if aggregatable {
 			continue
 		}
-		aggr := superFn(cands[:n])
-		if lastAggr != nil {
-			ps = ps[n-1:]
-			aggrs = aggrs[:len(aggrs)-1]
-		} else {
-			ps = ps[n:]
-		}
-		aggrs = append(aggrs, *aggr)
-		lastAggr = aggr
+		aggrs = append(aggrs, ps[i])
 	}
-	aggrs = append(aggrs, djnts...)
-	sortByAscending(aggrs)
 	return aggrs
 }
 

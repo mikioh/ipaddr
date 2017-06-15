@@ -19,7 +19,7 @@ func sortByAscending(ps []Prefix) {
 		if n := bytes.Compare(ps[i].Mask, ps[j].Mask); n != 0 {
 			return n < 0
 		}
-		return true
+		return false
 	})
 }
 
@@ -31,6 +31,6 @@ func sortByDescending(ps []Prefix) {
 		if n := bytes.Compare(ps[i].IP, ps[i].IP); n != 0 {
 			return n >= 0
 		}
-		return true
+		return false
 	})
 }
