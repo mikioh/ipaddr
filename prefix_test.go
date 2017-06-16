@@ -646,7 +646,7 @@ func TestPrefixBinaryMarshalerUnmarshaler(t *testing.T) {
 	}
 }
 
-var prefixContainsTests = []struct {
+var prefixIPNetContainsTests = []struct {
 	in   string
 	ip   net.IP
 	want bool
@@ -660,11 +660,39 @@ var prefixContainsTests = []struct {
 	{"2001:db8:f001::/48", net.ParseIP("2001:db8:f002::1"), false},
 }
 
+func TestPrefixIPNetContains(t *testing.T) {
+	for i, tt := range prefixIPNetContainsTests {
+		p := toPrefix(tt.in)
+		if out := p.IPNet.Contains(tt.ip); out != tt.want {
+			t.Errorf("#%d: got %v; want %v", i, out, tt.want)
+		}
+	}
+}
+
+var prefixContainsTests = []struct {
+	in []ipaddr.Prefix
+	ok bool
+}{
+	{toPrefixes([]string{"192.0.2.0/23", "192.0.2.0/24"}), true},
+	{toPrefixes([]string{"192.0.2.0/24", "192.0.2.0/24"}), false},
+	{toPrefixes([]string{"192.0.2.0/25", "192.0.2.0/24"}), false},
+
+	{toPrefixes([]string{"2001:db8:1::/47", "2001:db8:1::/48"}), true},
+	{toPrefixes([]string{"2001:db8:1::/48", "2001:db8:1::/48"}), false},
+	{toPrefixes([]string{"2001:db8:1::/49", "2001:db8:1::/48"}), false},
+
+	{toPrefixes([]string{"2001:db8:1::/127", "2001:db8:1::/128"}), true},
+	{toPrefixes([]string{"2001:db8:1::/127", "2001:db8:1::/127"}), false},
+	{toPrefixes([]string{"2001:db8:1::/128", "2001:db8:1::/127"}), false},
+
+	{toPrefixes([]string{"192.0.2.1/24", "2001:db8:1::1/64"}), false},
+	{toPrefixes([]string{"2001:db8:1::1/64", "192.0.2.1/24"}), false},
+}
+
 func TestPrefixContains(t *testing.T) {
 	for i, tt := range prefixContainsTests {
-		p := toPrefix(tt.in)
-		if out := p.Contains(tt.ip); out != tt.want {
-			t.Errorf("#%d: got %v; want %v", i, out, tt.want)
+		if ok := tt.in[0].Contains(&tt.in[1]); ok != tt.ok {
+			t.Errorf("#%d: got %v; want %v", i, ok, tt.ok)
 		}
 	}
 }

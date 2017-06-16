@@ -51,6 +51,52 @@ func (p *Prefix) lastIPv6Int() ipv6Int {
 	return i
 }
 
+// Contains reports whether q is a subnetwork of p.
+func (p *Prefix) Contains(q *Prefix) bool {
+	if p.IP.To4() != nil {
+		if q.IP.To4() == nil {
+			return false
+		}
+		l := p.Len()
+		if l >= q.Len() {
+			return false
+		}
+		base := ipToIPv4Int(p.IP.Mask(p.Mask))
+		mask := ipMaskToIPv4Int(p.Mask)
+		fip := ipToIPv4Int(q.IP)
+		lip := q.lastIPv4Int()
+		fdiff := uint32((base ^ fip) & mask)
+		ldiff := uint32((base ^ lip) & mask)
+		if leadingZeros32(fdiff) >= l && leadingZeros32(ldiff) >= l {
+			return true
+		}
+	}
+	if p.IP.To16() != nil && p.IP.To4() == nil {
+		if q.IP.To16() == nil || q.IP.To4() != nil {
+			return false
+		}
+		l := p.Len()
+		if l >= q.Len() {
+			return false
+		}
+		base := ipToIPv6Int(p.IP)
+		mask := ipMaskToIPv6Int(p.Mask)
+		l0, l1 := 64, l-64
+		if l < 64 {
+			l0, l1 = l, 0
+		}
+		fip := ipToIPv6Int(q.IP)
+		lip := q.lastIPv6Int()
+		var fdiff, ldiff ipv6Int
+		fdiff[0], fdiff[1] = (base[0]^fip[0])&mask[0], (base[1]^fip[1])&mask[1]
+		ldiff[0], ldiff[1] = (base[0]^lip[0])&mask[0], (base[1]^lip[1])&mask[1]
+		if leadingZeros64(fdiff[0]) >= l0 && leadingZeros64(fdiff[1]) >= l1 && leadingZeros64(ldiff[0]) >= l0 && leadingZeros64(ldiff[1]) >= l1 {
+			return true
+		}
+	}
+	return false
+}
+
 // Equal reports whether p and q are equal.
 func (p *Prefix) Equal(q *Prefix) bool {
 	return p.IP.Equal(q.IP) && net.IP(p.Mask).Equal(net.IP(q.Mask))
@@ -58,7 +104,7 @@ func (p *Prefix) Equal(q *Prefix) bool {
 
 // Exclude returns a list of prefixes that do not contain q.
 func (p *Prefix) Exclude(q *Prefix) []Prefix {
-	if !p.Contains(q.IP) {
+	if !p.IPNet.Contains(q.IP) {
 		return nil
 	}
 	if p.Equal(q) {
@@ -71,10 +117,10 @@ func (p *Prefix) Exclude(q *Prefix) []Prefix {
 	var ps []Prefix
 	l, r := subsFn(p, false)
 	for !l.Equal(q) && !r.Equal(q) {
-		if l.Contains(q.IP) {
+		if l.IPNet.Contains(q.IP) {
 			ps = append(ps, *r)
 			l, r = subsFn(l, true)
-		} else if r.Contains(q.IP) {
+		} else if r.IPNet.Contains(q.IP) {
 			ps = append(ps, *l)
 			l, r = subsFn(r, true)
 		}
@@ -173,7 +219,7 @@ func (p *Prefix) NumNodes() *big.Int {
 
 // Overlaps reports whether p overlaps with q.
 func (p *Prefix) Overlaps(q *Prefix) bool {
-	return p.Contains(q.IP) || p.Contains(q.Last()) || q.Contains(p.IP) || q.Contains(p.Last())
+	return p.Contains(q) || q.Contains(p) || p.Equal(q)
 }
 
 func (p Prefix) String() string {
@@ -301,7 +347,7 @@ func aggregateAggrs(ps []Prefix) []Prefix {
 			if i == j {
 				continue
 			}
-			if ps[j].Contains(ps[i].IP) && ps[j].Contains(ps[i].Last()) {
+			if ps[j].Contains(&ps[i]) {
 				aggregatable = true
 				break
 			}

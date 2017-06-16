@@ -118,7 +118,7 @@ func (c *Cursor) Set(pos *Position) error {
 			break
 		}
 	}
-	if pi == -1 || !c.ps[pi].Contains(pos.IP) {
+	if pi == -1 || !c.ps[pi].IPNet.Contains(pos.IP) {
 		return errors.New("position out of range")
 	}
 	c.set(pi, pos.IP.To16())
