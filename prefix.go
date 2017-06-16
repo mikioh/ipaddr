@@ -51,13 +51,12 @@ func (p *Prefix) lastIPv6Int() ipv6Int {
 	return i
 }
 
-// Equal reports whether the prefix p and q are equal.
+// Equal reports whether p and q are equal.
 func (p *Prefix) Equal(q *Prefix) bool {
 	return p.IP.Equal(q.IP) && net.IP(p.Mask).Equal(net.IP(q.Mask))
 }
 
-// Exclude returns a list of prefixes that do not contain the prefix
-// q.
+// Exclude returns a list of prefixes that do not contain q.
 func (p *Prefix) Exclude(q *Prefix) []Prefix {
 	if !p.Contains(q.IP) {
 		return nil
@@ -123,9 +122,8 @@ func (p *Prefix) Hostmask() net.IPMask {
 	return invert(p.Mask)
 }
 
-// Last returns the last IP in the address range of prefix p.
-// It returns the address of the prefix when the prefix contains only
-// one address.
+// Last returns the last IP in the address range of p.
+// It returns the address of p when p contains only one address.
 func (p *Prefix) Last() net.IP {
 	if p.IP.To4() != nil {
 		i := p.lastIPv4Int()
@@ -138,13 +136,13 @@ func (p *Prefix) Last() net.IP {
 	return nil
 }
 
-// Len returns the length of the prefix p in bits.
+// Len returns the length of p in bits.
 func (p *Prefix) Len() int {
 	l, _ := p.Mask.Size()
 	return l
 }
 
-// MarshalBinary returns a BGP NLRI binary form of the prefix p.
+// MarshalBinary returns a BGP NLRI binary form of p.
 func (p *Prefix) MarshalBinary() ([]byte, error) {
 	ip := p.IP
 	if p.IP.To4() != nil {
@@ -162,18 +160,18 @@ func (p *Prefix) MarshalBinary() ([]byte, error) {
 	return b[:l], nil
 }
 
-// MarshalText returns a UTF-8-encoded text form of the prefix p.
+// MarshalText returns a UTF-8-encoded text form of p.
 func (p *Prefix) MarshalText() ([]byte, error) {
 	return []byte(p.String()), nil
 }
 
-// NumNodes returns the number of IP node addresses in the prefix p.
+// NumNodes returns the number of IP node addresses in p.
 func (p *Prefix) NumNodes() *big.Int {
 	i := new(big.Int).SetBytes(invert(p.Mask))
 	return i.Add(i, big.NewInt(1))
 }
 
-// Overlaps reports whether the prefix p overlaps with the prefix q.
+// Overlaps reports whether p overlaps with q.
 func (p *Prefix) Overlaps(q *Prefix) bool {
 	return p.Contains(q.IP) || p.Contains(q.Last()) || q.Contains(p.IP) || q.Contains(p.Last())
 }
@@ -182,9 +180,9 @@ func (p Prefix) String() string {
 	return p.IPNet.String()
 }
 
-// Subnets returns a list of prefixes that are split from the prefix
-// p, into small address blocks by n which represents a number of
-// subnetworks in power of 2 notation.
+// Subnets returns a list of prefixes that are split from p, into
+// small address blocks by n which represents a number of subnetworks
+// in power of 2 notation.
 func (p *Prefix) Subnets(n int) []Prefix {
 	if 0 > n || n > 17 { // don't bother runtime.makeslice by big numbers
 		return nil
@@ -210,8 +208,7 @@ func (p *Prefix) Subnets(n int) []Prefix {
 	return ps
 }
 
-// UnmarshalBinary replaces the prefix p with the BGP NLRI binary form
-// b.
+// UnmarshalBinary replaces p with the BGP NLRI binary form b.
 func (p *Prefix) UnmarshalBinary(b []byte) error {
 	if p.IP.To4() != nil {
 		binary.BigEndian.PutUint32(p.Mask, mask32(int(b[0])))
@@ -229,7 +226,7 @@ func (p *Prefix) UnmarshalBinary(b []byte) error {
 	return nil
 }
 
-// UnmarshalText replaces the prefix p with txt.
+// UnmarshalText replaces p with txt.
 func (p *Prefix) UnmarshalText(txt []byte) error {
 	_, n, err := net.ParseCIDR(string(txt))
 	if err != nil {
@@ -240,8 +237,7 @@ func (p *Prefix) UnmarshalText(txt []byte) error {
 	return nil
 }
 
-// Aggregate aggregates the prefixes ps and returns a list of
-// aggregated prefixes.
+// Aggregate aggregates ps and returns a list of aggregated prefixes.
 func Aggregate(ps []Prefix) []Prefix {
 	ps = newSortedPrefixes(ps, sortDescending, true)
 	switch len(ps) {
@@ -467,7 +463,7 @@ func summarizeIPv6(fip, lip net.IP) []Prefix {
 	return ps
 }
 
-// Supernet finds out a shortest common prefix for the prefixes ps.
+// Supernet finds out a shortest common prefix for ps.
 // It returns nil when no suitable prefix is found.
 func Supernet(ps []Prefix) *Prefix {
 	if len(ps) == 0 {

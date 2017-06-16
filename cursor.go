@@ -29,23 +29,23 @@ func (c *Cursor) set(pi int, ip net.IP) {
 	}
 }
 
-// First returns the start position on the cursor c.
+// First returns the start position on c.
 func (c *Cursor) First() *Position {
 	return &Position{IP: c.ps[0].IP, Prefix: c.ps[0]}
 }
 
-// Last returns the end position on the cursor c.
+// Last returns the end position on c.
 func (c *Cursor) Last() *Position {
 	return &Position{IP: c.ps[len(c.ps)-1].Last(), Prefix: c.ps[len(c.ps)-1]}
 }
 
-// List returns the list of prefixes on the cursor c.
+// List returns the list of prefixes on c.
 func (c *Cursor) List() []Prefix {
 	return c.ps
 }
 
-// Next turns to the next position on the cursor c.
-// It returns nil at the end on the cursor c.
+// Next turns to the next position on c.
+// It returns nil at the end on c.
 func (c *Cursor) Next() *Position {
 	n := c.curr.cmp(&c.end)
 	if n == 0 {
@@ -67,13 +67,13 @@ func (c *Cursor) Next() *Position {
 	return c.Pos()
 }
 
-// Pos returns the current position on the cursor c.
+// Pos returns the current position on c.
 func (c *Cursor) Pos() *Position {
 	return &Position{IP: c.curr.ip(), Prefix: c.ps[c.pi]}
 }
 
-// Prev turns to the previous position on the cursor c.
-// It returns nil at the start on the cursor c.
+// Prev turns to the previous position on c.
+// It returns nil at the start on c.
 func (c *Cursor) Prev() *Position {
 	n := c.curr.cmp(&c.start)
 	if n == 0 {
@@ -96,7 +96,7 @@ func (c *Cursor) Prev() *Position {
 	return c.Pos()
 }
 
-// Reset resets all state and switches the prefixes to ps.
+// Reset resets all state and switches to ps.
 // It uses the existing prefixes when ps is nil.
 func (c *Cursor) Reset(ps []Prefix) {
 	ps = newSortedPrefixes(ps, sortAscending, false)
@@ -106,7 +106,7 @@ func (c *Cursor) Reset(ps []Prefix) {
 	c.set(0, c.ps[0].IP.To16())
 }
 
-// Set sets the current position on the cursor c to pos.
+// Set sets the current position on c to pos.
 func (c *Cursor) Set(pos *Position) error {
 	if pos == nil {
 		return errors.New("invalid position")
