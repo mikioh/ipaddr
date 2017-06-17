@@ -300,20 +300,12 @@ func Aggregate(ps []Prefix) []Prefix {
 	if ps[0].IP.To4() != nil {
 		bfFn, superFn = branchingFactorIPv4, supernetIPv4
 	}
-	for {
-		var cont bool
-		ps, cont = aggregate(ps, bfFn, superFn)
-		sortByDescending(ps)
-		if !cont {
-			break
-		}
-	}
-	ps = aggregateAggrs(ps)
+	ps = aggregate(aggregateByBF(ps, bfFn, superFn))
 	sortByAscending(ps)
 	return ps
 }
 
-func aggregate(ps []Prefix, bfFn func([]Prefix) (int, bool), superFn func([]Prefix) *Prefix) ([]Prefix, bool) {
+func aggregateByBF(ps []Prefix, bfFn func([]Prefix) (int, bool), superFn func([]Prefix) *Prefix) []Prefix {
 	var cont bool
 	aggrs := ps[:0]
 	cands := make([]Prefix, 0, len(ps))
@@ -340,10 +332,14 @@ func aggregate(ps []Prefix, bfFn func([]Prefix) (int, bool), superFn func([]Pref
 			cont = true
 		}
 	}
-	return aggrs, cont
+	sortByDescending(aggrs)
+	if !cont {
+		return aggrs
+	}
+	return aggregateByBF(aggrs, bfFn, superFn)
 }
 
-func aggregateAggrs(ps []Prefix) []Prefix {
+func aggregate(ps []Prefix) []Prefix {
 	aggrs := ps[:0]
 	for i := range ps {
 		var aggregatable bool
