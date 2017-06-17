@@ -54,47 +54,51 @@ func (p *Prefix) lastIPv6Int() ipv6Int {
 // Contains reports whether q is a subnetwork of p.
 func (p *Prefix) Contains(q *Prefix) bool {
 	if p.IP.To4() != nil {
-		if q.IP.To4() == nil {
-			return false
-		}
-		l := p.Len()
-		if l >= q.Len() {
-			return false
-		}
-		base := ipToIPv4Int(p.IP.Mask(p.Mask))
-		mask := ipMaskToIPv4Int(p.Mask)
-		fip := ipToIPv4Int(q.IP)
-		lip := q.lastIPv4Int()
-		fdiff := uint32((base ^ fip) & mask)
-		ldiff := uint32((base ^ lip) & mask)
-		if leadingZeros32(fdiff) >= l && leadingZeros32(ldiff) >= l {
-			return true
-		}
+		return p.containsIPv4(q)
 	}
 	if p.IP.To16() != nil && p.IP.To4() == nil {
-		if q.IP.To16() == nil || q.IP.To4() != nil {
-			return false
-		}
-		l := p.Len()
-		if l >= q.Len() {
-			return false
-		}
-		base := ipToIPv6Int(p.IP)
-		mask := ipMaskToIPv6Int(p.Mask)
-		l0, l1 := 64, l-64
-		if l < 64 {
-			l0, l1 = l, 0
-		}
-		fip := ipToIPv6Int(q.IP)
-		lip := q.lastIPv6Int()
-		var fdiff, ldiff ipv6Int
-		fdiff[0], fdiff[1] = (base[0]^fip[0])&mask[0], (base[1]^fip[1])&mask[1]
-		ldiff[0], ldiff[1] = (base[0]^lip[0])&mask[0], (base[1]^lip[1])&mask[1]
-		if leadingZeros64(fdiff[0]) >= l0 && leadingZeros64(fdiff[1]) >= l1 && leadingZeros64(ldiff[0]) >= l0 && leadingZeros64(ldiff[1]) >= l1 {
-			return true
-		}
+		return p.containsIPv6(q)
 	}
 	return false
+}
+
+func (p *Prefix) containsIPv4(q *Prefix) bool {
+	if q.IP.To4() == nil {
+		return false
+	}
+	l := p.Len()
+	if l >= q.Len() {
+		return false
+	}
+	base := ipToIPv4Int(p.IP.Mask(p.Mask))
+	mask := ipMaskToIPv4Int(p.Mask)
+	fip := ipToIPv4Int(q.IP)
+	lip := q.lastIPv4Int()
+	fdiff := uint32((base ^ fip) & mask)
+	ldiff := uint32((base ^ lip) & mask)
+	return leadingZeros32(fdiff) >= l && leadingZeros32(ldiff) >= l
+}
+
+func (p *Prefix) containsIPv6(q *Prefix) bool {
+	if q.IP.To16() == nil || q.IP.To4() != nil {
+		return false
+	}
+	l := p.Len()
+	if l >= q.Len() {
+		return false
+	}
+	base := ipToIPv6Int(p.IP)
+	mask := ipMaskToIPv6Int(p.Mask)
+	l0, l1 := 64, l-64
+	if l < 64 {
+		l0, l1 = l, 0
+	}
+	fip := ipToIPv6Int(q.IP)
+	lip := q.lastIPv6Int()
+	var fdiff, ldiff ipv6Int
+	fdiff[0], fdiff[1] = (base[0]^fip[0])&mask[0], (base[1]^fip[1])&mask[1]
+	ldiff[0], ldiff[1] = (base[0]^lip[0])&mask[0], (base[1]^lip[1])&mask[1]
+	return leadingZeros64(fdiff[0]) >= l0 && leadingZeros64(fdiff[1]) >= l1 && leadingZeros64(ldiff[0]) >= l0 && leadingZeros64(ldiff[1]) >= l1
 }
 
 // Equal reports whether p and q are equal.
@@ -530,7 +534,10 @@ func Supernet(ps []Prefix) *Prefix {
 	if ps[0].IP.To4() != nil {
 		return supernetIPv4(ps)
 	}
-	return supernetIPv6(ps)
+	if ps[0].IP.To16() != nil && ps[0].IP.To4() == nil {
+		return supernetIPv6(ps)
+	}
+	return nil
 }
 
 func supernetIPv4(ps []Prefix) *Prefix {
