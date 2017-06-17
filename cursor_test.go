@@ -13,70 +13,68 @@ import (
 	"github.com/mikioh/ipaddr"
 )
 
-var cursorFirstLastIPTests = []struct {
-	in          []ipaddr.Prefix
-	first, last net.IP
-}{
-	// IPv4 prefixes
-	{
-		toPrefixes([]string{
-			"0.0.0.0/0",
-			"255.255.255.255/32",
-		}),
-		net.ParseIP("0.0.0.0"),
-		net.ParseIP("255.255.255.255"),
-	},
-	{
-		toPrefixes([]string{
-			"192.168.0.0/32", "192.168.0.1/32", "192.168.0.2/32", "192.168.0.3/32",
-			"192.168.4.0/24", "192.168.0.0/32", "192.168.0.1/32",
-		}),
-		net.ParseIP("192.168.0.0"),
-		net.ParseIP("192.168.4.255"),
-	},
-	{
-		toPrefixes([]string{"192.168.0.1/32"}),
-		net.ParseIP("192.168.0.1"),
-		net.ParseIP("192.168.0.1"),
-	},
-
-	// IPv6 prefixes
-	{
-		toPrefixes([]string{
-			"::/0",
-			"ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128",
-		}),
-		net.ParseIP("::"),
-		net.ParseIP("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"),
-	},
-	{
-		toPrefixes([]string{
-			"2001:db8::/64", "2001:db8:0:1::/64", "2001:db8:0:2::/64", "2001:db8:0:3::/64",
-			"2001:db8:0:4::/64", "2001:db8::/64", "2001:db8::1/64",
-		}),
-		net.ParseIP("2001:db8::"),
-		net.ParseIP("2001:db8:0:4:ffff:ffff:ffff:ffff"),
-	},
-	{
-		toPrefixes([]string{"2001:db8::1/128"}),
-		net.ParseIP("2001:db8::1"),
-		net.ParseIP("2001:db8::1"),
-	},
-
-	// Mixed prefixes
-	{
-		toPrefixes([]string{
-			"192.168.0.1/32",
-			"2001:db8::1/64",
-			"192.168.255.0/24",
-		}),
-		net.ParseIP("192.168.0.1"),
-		net.ParseIP("2001:db8::ffff:ffff:ffff:ffff"),
-	},
-}
-
 func TestCursorFirstLastIP(t *testing.T) {
-	for i, tt := range cursorFirstLastIPTests {
+	for i, tt := range []struct {
+		in          []ipaddr.Prefix
+		first, last net.IP
+	}{
+		// IPv4 prefixes
+		{
+			toPrefixes([]string{
+				"0.0.0.0/0",
+				"255.255.255.255/32",
+			}),
+			net.ParseIP("0.0.0.0"),
+			net.ParseIP("255.255.255.255"),
+		},
+		{
+			toPrefixes([]string{
+				"192.168.0.0/32", "192.168.0.1/32", "192.168.0.2/32", "192.168.0.3/32",
+				"192.168.4.0/24", "192.168.0.0/32", "192.168.0.1/32",
+			}),
+			net.ParseIP("192.168.0.0"),
+			net.ParseIP("192.168.4.255"),
+		},
+		{
+			toPrefixes([]string{"192.168.0.1/32"}),
+			net.ParseIP("192.168.0.1"),
+			net.ParseIP("192.168.0.1"),
+		},
+
+		// IPv6 prefixes
+		{
+			toPrefixes([]string{
+				"::/0",
+				"ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128",
+			}),
+			net.ParseIP("::"),
+			net.ParseIP("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"),
+		},
+		{
+			toPrefixes([]string{
+				"2001:db8::/64", "2001:db8:0:1::/64", "2001:db8:0:2::/64", "2001:db8:0:3::/64",
+				"2001:db8:0:4::/64", "2001:db8::/64", "2001:db8::1/64",
+			}),
+			net.ParseIP("2001:db8::"),
+			net.ParseIP("2001:db8:0:4:ffff:ffff:ffff:ffff"),
+		},
+		{
+			toPrefixes([]string{"2001:db8::1/128"}),
+			net.ParseIP("2001:db8::1"),
+			net.ParseIP("2001:db8::1"),
+		},
+
+		// Mixed prefixes
+		{
+			toPrefixes([]string{
+				"192.168.0.1/32",
+				"2001:db8::1/64",
+				"192.168.255.0/24",
+			}),
+			net.ParseIP("192.168.0.1"),
+			net.ParseIP("2001:db8::ffff:ffff:ffff:ffff"),
+		},
+	} {
 		c := ipaddr.NewCursor(tt.in)
 		fpos, lpos := c.First(), c.Last()
 		if !tt.first.Equal(fpos.IP) || !tt.last.Equal(lpos.IP) {
@@ -85,60 +83,58 @@ func TestCursorFirstLastIP(t *testing.T) {
 	}
 }
 
-var cursorFirstLastPrefixTests = []struct {
-	in          []ipaddr.Prefix
-	first, last *ipaddr.Prefix
-}{
-	// IPv4 prefixes
-	{
-		toPrefixes([]string{
-			"0.0.0.0/0",
-			"255.255.255.255/32",
-		}),
-		toPrefix("0.0.0.0/0"),
-		toPrefix("255.255.255.255/32"),
-	},
-	{
-		toPrefixes([]string{
-			"192.168.0.0/32", "192.168.0.1/32", "192.168.0.2/32", "192.168.0.3/32",
-			"192.168.4.0/24", "192.168.0.0/32", "192.168.0.1/32",
-		}),
-		toPrefix("192.168.0.0/32"),
-		toPrefix("192.168.4.0/24"),
-	},
-
-	// IPv6 prefixes
-	{
-		toPrefixes([]string{
-			"::/0",
-			"ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128",
-		}),
-		toPrefix("::/0"),
-		toPrefix("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128"),
-	},
-	{
-		toPrefixes([]string{
-			"2001:db8::/64", "2001:db8:0:1::/64", "2001:db8:0:2::/64", "2001:db8:0:3::/64",
-			"2001:db8:0:4::/64", "2001:db8::/64", "2001:db8::1/64",
-		}),
-		toPrefix("2001:db8::/64"),
-		toPrefix("2001:db8:0:4::/64"),
-	},
-
-	// Mixed prefixes
-	{
-		toPrefixes([]string{
-			"192.168.0.1/32",
-			"2001:db8::1/64",
-			"192.168.255.0/24",
-		}),
-		toPrefix("192.168.0.1/32"),
-		toPrefix("2001:db8::/64"),
-	},
-}
-
 func TestCursorFirstLastPrefix(t *testing.T) {
-	for i, tt := range cursorFirstLastPrefixTests {
+	for i, tt := range []struct {
+		in          []ipaddr.Prefix
+		first, last *ipaddr.Prefix
+	}{
+		// IPv4 prefixes
+		{
+			toPrefixes([]string{
+				"0.0.0.0/0",
+				"255.255.255.255/32",
+			}),
+			toPrefix("0.0.0.0/0"),
+			toPrefix("255.255.255.255/32"),
+		},
+		{
+			toPrefixes([]string{
+				"192.168.0.0/32", "192.168.0.1/32", "192.168.0.2/32", "192.168.0.3/32",
+				"192.168.4.0/24", "192.168.0.0/32", "192.168.0.1/32",
+			}),
+			toPrefix("192.168.0.0/32"),
+			toPrefix("192.168.4.0/24"),
+		},
+
+		// IPv6 prefixes
+		{
+			toPrefixes([]string{
+				"::/0",
+				"ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128",
+			}),
+			toPrefix("::/0"),
+			toPrefix("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128"),
+		},
+		{
+			toPrefixes([]string{
+				"2001:db8::/64", "2001:db8:0:1::/64", "2001:db8:0:2::/64", "2001:db8:0:3::/64",
+				"2001:db8:0:4::/64", "2001:db8::/64", "2001:db8::1/64",
+			}),
+			toPrefix("2001:db8::/64"),
+			toPrefix("2001:db8:0:4::/64"),
+		},
+
+		// Mixed prefixes
+		{
+			toPrefixes([]string{
+				"192.168.0.1/32",
+				"2001:db8::1/64",
+				"192.168.255.0/24",
+			}),
+			toPrefix("192.168.0.1/32"),
+			toPrefix("2001:db8::/64"),
+		},
+	} {
 		c := ipaddr.NewCursor(tt.in)
 		fpos, lpos := c.First(), c.Last()
 		if !tt.first.Equal(&fpos.Prefix) || !tt.last.Equal(&lpos.Prefix) {
@@ -147,91 +143,89 @@ func TestCursorFirstLastPrefix(t *testing.T) {
 	}
 }
 
-var cursorPrevNextTests = []struct {
-	ps               []ipaddr.Prefix
-	in, pwant, nwant *ipaddr.Position
-}{
-	// IPv4 prefixes
-	{
-		toPrefixes([]string{"192.168.0.0/24"}),
-		toPosition("192.168.0.0", "192.168.0.0/24"),
-		nil,
-		toPosition("192.168.0.1", "192.168.0.0/24"),
-	},
-	{
-		toPrefixes([]string{"192.168.0.0/24"}),
-		toPosition("192.168.0.255", "192.168.0.0/24"),
-		toPosition("192.168.0.254", "192.168.0.0/24"),
-		nil,
-	},
-	{
-		toPrefixes([]string{"192.168.0.0/24", "192.168.1.0/24"}),
-		toPosition("192.168.0.255", "192.168.0.0/24"),
-		toPosition("192.168.0.254", "192.168.0.0/24"),
-		toPosition("192.168.1.0", "192.168.1.0/24"),
-	},
-	{
-		toPrefixes([]string{"192.168.0.0/24", "192.168.1.0/24"}),
-		toPosition("192.168.1.0", "192.168.1.0/24"),
-		toPosition("192.168.0.255", "192.168.0.0/24"),
-		toPosition("192.168.1.1", "192.168.1.0/24"),
-	},
-
-	// IPv6 prefixes
-	{
-		toPrefixes([]string{"2001:db8::/64"}),
-		toPosition("2001:db8::", "2001:db8::/64"),
-		nil,
-		toPosition("2001:db8::1", "2001:db8::/64"),
-	},
-	{
-		toPrefixes([]string{"2001:db8::/64"}),
-		toPosition("2001:db8::ffff:ffff:ffff:ffff", "2001:db8::/64"),
-		toPosition("2001:db8::ffff:ffff:ffff:fffe", "2001:db8::/64"),
-		nil,
-	},
-	{
-		toPrefixes([]string{"2001:db8::/64", "2001:db8:1::/64"}),
-		toPosition("2001:db8::ffff:ffff:ffff:ffff", "2001:db8::/64"),
-		toPosition("2001:db8::ffff:ffff:ffff:fffe", "2001:db8::/64"),
-		toPosition("2001:db8:1::", "2001:db8:1::/64"),
-	},
-	{
-		toPrefixes([]string{"2001:db8::/64", "2001:db8:1::/64"}),
-		toPosition("2001:db8:1::", "2001:db8:1::/64"),
-		toPosition("2001:db8::ffff:ffff:ffff:ffff", "2001:db8::/64"),
-		toPosition("2001:db8:1::1", "2001:db8:1::/64"),
-	},
-
-	// Mixed prefixes
-	{
-		toPrefixes([]string{"192.168.0.0/24", "2001:db8::/64"}),
-		toPosition("2001:db8::ffff:ffff:ffff:ffff", "2001:db8::/64"),
-		toPosition("2001:db8::ffff:ffff:ffff:fffe", "2001:db8::/64"),
-		nil,
-	},
-	{
-		toPrefixes([]string{"192.168.0.0/24", "2001:db8::/64"}),
-		toPosition("192.168.0.255", "192.168.0.0/24"),
-		toPosition("192.168.0.254", "192.168.0.0/24"),
-		toPosition("2001:db8::", "2001:db8::/64"),
-	},
-	{
-		toPrefixes([]string{"192.168.0.0/24", "::/64"}),
-		toPosition("192.168.0.255", "192.168.0.0/24"),
-		toPosition("192.168.0.254", "192.168.0.0/24"),
-		nil,
-	},
-	{
-		toPrefixes([]string{"192.168.0.0/24", "::/64"}),
-		toPosition("::ffff:ffff:ffff:ffff", "::/64"),
-		toPosition("::ffff:ffff:ffff:fffe", "::/64"),
-		toPosition("192.168.0.0", "192.168.0.0/24"),
-	},
-}
-
 func TestCursorPrevNext(t *testing.T) {
-	for i, tt := range cursorPrevNextTests {
+	for i, tt := range []struct {
+		ps               []ipaddr.Prefix
+		in, pwant, nwant *ipaddr.Position
+	}{
+		// IPv4 prefixes
+		{
+			toPrefixes([]string{"192.168.0.0/24"}),
+			toPosition("192.168.0.0", "192.168.0.0/24"),
+			nil,
+			toPosition("192.168.0.1", "192.168.0.0/24"),
+		},
+		{
+			toPrefixes([]string{"192.168.0.0/24"}),
+			toPosition("192.168.0.255", "192.168.0.0/24"),
+			toPosition("192.168.0.254", "192.168.0.0/24"),
+			nil,
+		},
+		{
+			toPrefixes([]string{"192.168.0.0/24", "192.168.1.0/24"}),
+			toPosition("192.168.0.255", "192.168.0.0/24"),
+			toPosition("192.168.0.254", "192.168.0.0/24"),
+			toPosition("192.168.1.0", "192.168.1.0/24"),
+		},
+		{
+			toPrefixes([]string{"192.168.0.0/24", "192.168.1.0/24"}),
+			toPosition("192.168.1.0", "192.168.1.0/24"),
+			toPosition("192.168.0.255", "192.168.0.0/24"),
+			toPosition("192.168.1.1", "192.168.1.0/24"),
+		},
+
+		// IPv6 prefixes
+		{
+			toPrefixes([]string{"2001:db8::/64"}),
+			toPosition("2001:db8::", "2001:db8::/64"),
+			nil,
+			toPosition("2001:db8::1", "2001:db8::/64"),
+		},
+		{
+			toPrefixes([]string{"2001:db8::/64"}),
+			toPosition("2001:db8::ffff:ffff:ffff:ffff", "2001:db8::/64"),
+			toPosition("2001:db8::ffff:ffff:ffff:fffe", "2001:db8::/64"),
+			nil,
+		},
+		{
+			toPrefixes([]string{"2001:db8::/64", "2001:db8:1::/64"}),
+			toPosition("2001:db8::ffff:ffff:ffff:ffff", "2001:db8::/64"),
+			toPosition("2001:db8::ffff:ffff:ffff:fffe", "2001:db8::/64"),
+			toPosition("2001:db8:1::", "2001:db8:1::/64"),
+		},
+		{
+			toPrefixes([]string{"2001:db8::/64", "2001:db8:1::/64"}),
+			toPosition("2001:db8:1::", "2001:db8:1::/64"),
+			toPosition("2001:db8::ffff:ffff:ffff:ffff", "2001:db8::/64"),
+			toPosition("2001:db8:1::1", "2001:db8:1::/64"),
+		},
+
+		// Mixed prefixes
+		{
+			toPrefixes([]string{"192.168.0.0/24", "2001:db8::/64"}),
+			toPosition("2001:db8::ffff:ffff:ffff:ffff", "2001:db8::/64"),
+			toPosition("2001:db8::ffff:ffff:ffff:fffe", "2001:db8::/64"),
+			nil,
+		},
+		{
+			toPrefixes([]string{"192.168.0.0/24", "2001:db8::/64"}),
+			toPosition("192.168.0.255", "192.168.0.0/24"),
+			toPosition("192.168.0.254", "192.168.0.0/24"),
+			toPosition("2001:db8::", "2001:db8::/64"),
+		},
+		{
+			toPrefixes([]string{"192.168.0.0/24", "::/64"}),
+			toPosition("192.168.0.255", "192.168.0.0/24"),
+			toPosition("192.168.0.254", "192.168.0.0/24"),
+			nil,
+		},
+		{
+			toPrefixes([]string{"192.168.0.0/24", "::/64"}),
+			toPosition("::ffff:ffff:ffff:ffff", "::/64"),
+			toPosition("::ffff:ffff:ffff:fffe", "::/64"),
+			toPosition("192.168.0.0", "192.168.0.0/24"),
+		},
+	} {
 		c := ipaddr.NewCursor(tt.ps)
 		if err := c.Set(tt.in); err != nil {
 			t.Fatal(err)
@@ -250,36 +244,34 @@ func TestCursorPrevNext(t *testing.T) {
 	}
 }
 
-var cursorResetTests = []struct {
-	in  []ipaddr.Prefix
-	out *ipaddr.Position
-}{
-	// IPv4 prefixes
-	{
-		toPrefixes([]string{"192.168.0.0/24"}),
-		toPosition("192.168.0.0", "192.168.0.0/24"),
-	},
-
-	// IPv6 prefixes
-	{
-		toPrefixes([]string{"2001:db8::/64"}),
-		toPosition("2001:db8::", "2001:db8::/64"),
-	},
-
-	// Mixed prefixes
-	{
-		toPrefixes([]string{"192.168.0.0/24", "2001:db8::/64"}),
-		toPosition("192.168.0.0", "192.168.0.0/24"),
-	},
-
-	{
-		nil,
-		toPosition("0.0.0.0", "0.0.0.0/0"),
-	},
-}
-
 func TestCursorReset(t *testing.T) {
-	for i, tt := range cursorResetTests {
+	for i, tt := range []struct {
+		in  []ipaddr.Prefix
+		out *ipaddr.Position
+	}{
+		// IPv4 prefixes
+		{
+			toPrefixes([]string{"192.168.0.0/24"}),
+			toPosition("192.168.0.0", "192.168.0.0/24"),
+		},
+
+		// IPv6 prefixes
+		{
+			toPrefixes([]string{"2001:db8::/64"}),
+			toPosition("2001:db8::", "2001:db8::/64"),
+		},
+
+		// Mixed prefixes
+		{
+			toPrefixes([]string{"192.168.0.0/24", "2001:db8::/64"}),
+			toPosition("192.168.0.0", "192.168.0.0/24"),
+		},
+
+		{
+			nil,
+			toPosition("0.0.0.0", "0.0.0.0/0"),
+		},
+	} {
 		in := toPrefixes([]string{"0.0.0.0/0"})
 		c := ipaddr.NewCursor(in)
 		c.Reset(tt.in)
@@ -289,70 +281,68 @@ func TestCursorReset(t *testing.T) {
 	}
 }
 
-var cursorPosTests = []struct {
-	ps []ipaddr.Prefix
-	in *ipaddr.Position
-	error
-}{
-	// IPv4 prefixes
-	{
-		toPrefixes([]string{"192.168.0.0/24", "192.168.1.0/24", "192.168.2.0/24"}),
-		toPosition("192.168.1.1", "192.168.1.0/24"),
-		nil,
-	},
-	{
-		toPrefixes([]string{"192.168.0.0/24", "192.168.1.0/24", "192.168.2.0/24"}),
-		toPosition("192.168.3.1", "192.168.1.0/24"),
-		errors.New("should fail"),
-	},
-	{
-		toPrefixes([]string{"192.168.0.0/24", "192.168.1.0/24", "192.168.2.0/24"}),
-		toPosition("192.168.1.1", "192.168.3.0/24"),
-		errors.New("should fail"),
-	},
-
-	// IPv6 prefixes
-	{
-		toPrefixes([]string{"2001:db8::/64", "2001:db8:1::/64", "2001:db8:2::/64"}),
-		toPosition("2001:db8:1::1", "2001:db8:1::/64"),
-		nil,
-	},
-	{
-		toPrefixes([]string{"2001:db8::/64", "2001:db8:1::/64", "2001:db8:2::/64"}),
-		toPosition("2001:db8:3::1", "2001:db8:1::/64"),
-		errors.New("should fail"),
-	},
-	{
-		toPrefixes([]string{"2001:db8::/64", "2001:db8:1::/64", "2001:db8:2::/64"}),
-		toPosition("2001:db8:1::1", "2001:db8:3::/64"),
-		errors.New("should fail"),
-	},
-
-	// Mixed prefixes
-	{
-		toPrefixes([]string{"192.168.0.0/24", "2001:db8::/64"}),
-		toPosition("192.168.0.1", "192.168.0.0/24"),
-		nil,
-	},
-	{
-		toPrefixes([]string{"192.168.0.0/24", "2001:db8::/64"}),
-		toPosition("2001:db8::1", "2001:db8::/64"),
-		nil,
-	},
-	{
-		toPrefixes([]string{"192.168.0.0/24", "2001:db8::/64"}),
-		toPosition("2001:db8::1", "192.168.0.0/24"),
-		errors.New("should fail"),
-	},
-	{
-		toPrefixes([]string{"192.168.0.0/24", "2001:db8::/64"}),
-		toPosition("192.168.0.1", "2001:db8::/64"),
-		errors.New("should fail"),
-	},
-}
-
 func TestCursorPos(t *testing.T) {
-	for i, tt := range cursorPosTests {
+	for i, tt := range []struct {
+		ps []ipaddr.Prefix
+		in *ipaddr.Position
+		error
+	}{
+		// IPv4 prefixes
+		{
+			toPrefixes([]string{"192.168.0.0/24", "192.168.1.0/24", "192.168.2.0/24"}),
+			toPosition("192.168.1.1", "192.168.1.0/24"),
+			nil,
+		},
+		{
+			toPrefixes([]string{"192.168.0.0/24", "192.168.1.0/24", "192.168.2.0/24"}),
+			toPosition("192.168.3.1", "192.168.1.0/24"),
+			errors.New("should fail"),
+		},
+		{
+			toPrefixes([]string{"192.168.0.0/24", "192.168.1.0/24", "192.168.2.0/24"}),
+			toPosition("192.168.1.1", "192.168.3.0/24"),
+			errors.New("should fail"),
+		},
+
+		// IPv6 prefixes
+		{
+			toPrefixes([]string{"2001:db8::/64", "2001:db8:1::/64", "2001:db8:2::/64"}),
+			toPosition("2001:db8:1::1", "2001:db8:1::/64"),
+			nil,
+		},
+		{
+			toPrefixes([]string{"2001:db8::/64", "2001:db8:1::/64", "2001:db8:2::/64"}),
+			toPosition("2001:db8:3::1", "2001:db8:1::/64"),
+			errors.New("should fail"),
+		},
+		{
+			toPrefixes([]string{"2001:db8::/64", "2001:db8:1::/64", "2001:db8:2::/64"}),
+			toPosition("2001:db8:1::1", "2001:db8:3::/64"),
+			errors.New("should fail"),
+		},
+
+		// Mixed prefixes
+		{
+			toPrefixes([]string{"192.168.0.0/24", "2001:db8::/64"}),
+			toPosition("192.168.0.1", "192.168.0.0/24"),
+			nil,
+		},
+		{
+			toPrefixes([]string{"192.168.0.0/24", "2001:db8::/64"}),
+			toPosition("2001:db8::1", "2001:db8::/64"),
+			nil,
+		},
+		{
+			toPrefixes([]string{"192.168.0.0/24", "2001:db8::/64"}),
+			toPosition("2001:db8::1", "192.168.0.0/24"),
+			errors.New("should fail"),
+		},
+		{
+			toPrefixes([]string{"192.168.0.0/24", "2001:db8::/64"}),
+			toPosition("192.168.0.1", "2001:db8::/64"),
+			errors.New("should fail"),
+		},
+	} {
 		c := ipaddr.NewCursor(tt.ps)
 		err := c.Set(tt.in)
 		if err != nil && tt.error == nil {
@@ -367,38 +357,36 @@ func TestCursorPos(t *testing.T) {
 	}
 }
 
-var newCursorTests = []struct {
-	in []string
-}{
-	// IPv4 prefixes
-	{
-		[]string{
-			"192.168.0.0/32", "192.168.0.1/32", "192.168.0.2/32", "192.168.0.3/32",
-			"192.168.4.0/24", "192.168.0.0/32", "192.168.0.1/32",
-		},
-	},
-
-	// IPv6 prefixes
-	{
-		[]string{
-			"2001:db8::/64", "2001:db8:0:1::/64", "2001:db8:0:2::/64", "2001:db8:0:3::/64",
-			"2001:db8:0:4::/64", "2001:db8::/64", "2001:db8::1/64",
-		},
-	},
-
-	// Mixed prefixes
-	{
-		[]string{
-			"192.168.0.0/32", "192.168.0.1/32", "192.168.0.2/32", "192.168.0.3/32",
-			"192.168.4.0/24", "192.168.0.0/32", "192.168.0.1/32", "2001:db8::/64",
-			"2001:db8:0:1::/64", "2001:db8:0:2::/64", "2001:db8:0:3::/64", "2001:db8:0:4::/64",
-			"2001:db8::/64", "2001:db8::1/64",
-		},
-	},
-}
-
 func TestNewCursor(t *testing.T) {
-	for i, tt := range newCursorTests {
+	for i, tt := range []struct {
+		in []string
+	}{
+		// IPv4 prefixes
+		{
+			[]string{
+				"192.168.0.0/32", "192.168.0.1/32", "192.168.0.2/32", "192.168.0.3/32",
+				"192.168.4.0/24", "192.168.0.0/32", "192.168.0.1/32",
+			},
+		},
+
+		// IPv6 prefixes
+		{
+			[]string{
+				"2001:db8::/64", "2001:db8:0:1::/64", "2001:db8:0:2::/64", "2001:db8:0:3::/64",
+				"2001:db8:0:4::/64", "2001:db8::/64", "2001:db8::1/64",
+			},
+		},
+
+		// Mixed prefixes
+		{
+			[]string{
+				"192.168.0.0/32", "192.168.0.1/32", "192.168.0.2/32", "192.168.0.3/32",
+				"192.168.4.0/24", "192.168.0.0/32", "192.168.0.1/32", "2001:db8::/64",
+				"2001:db8:0:1::/64", "2001:db8:0:2::/64", "2001:db8:0:3::/64", "2001:db8:0:4::/64",
+				"2001:db8::/64", "2001:db8::1/64",
+			},
+		},
+	} {
 		in, orig := toPrefixes(tt.in), toPrefixes(tt.in)
 		ipaddr.NewCursor(in)
 		if !reflect.DeepEqual(in, orig) {
