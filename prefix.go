@@ -103,7 +103,7 @@ func (p *Prefix) containsIPv6(q *Prefix) bool {
 
 // Equal reports whether p and q are equal.
 func (p *Prefix) Equal(q *Prefix) bool {
-	return p.IP.Equal(q.IP) && net.IP(p.Mask).Equal(net.IP(q.Mask))
+	return compareAscending(p, q) == 0
 }
 
 // Exclude returns a list of prefixes that do not contain q.
