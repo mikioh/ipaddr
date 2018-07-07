@@ -289,7 +289,8 @@ func (p *Prefix) UnmarshalText(txt []byte) error {
 
 // Aggregate aggregates ps and returns a list of aggregated prefixes.
 func Aggregate(ps []Prefix) []Prefix {
-	ps = newSortedPrefixes(ps, sortDescending, true)
+	ps = newSortedPrefixes(ps, sortAscending, true)
+	sortByDescending(ps)
 	switch len(ps) {
 	case 0:
 		return nil
