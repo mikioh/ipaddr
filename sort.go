@@ -7,6 +7,7 @@ package ipaddr
 import (
 	"bytes"
 	"net"
+	"sort"
 )
 
 type byAddrFamily []Prefix
@@ -97,4 +98,28 @@ func clonePrefix(s *Prefix) *Prefix {
 	copy(d.IP, s.IP.To16())
 	copy(d.Mask, s.Mask)
 	return d
+}
+
+func sortByAscending(ps []Prefix) {
+	sort.Slice(ps, func(i, j int) bool {
+		if n := bytes.Compare(ps[i].IP, ps[j].IP); n != 0 {
+			return n < 0
+		}
+		if n := bytes.Compare(ps[i].Mask, ps[j].Mask); n != 0 {
+			return n < 0
+		}
+		return false
+	})
+}
+
+func sortByDescending(ps []Prefix) {
+	sort.Slice(ps, func(i, j int) bool {
+		if n := bytes.Compare(ps[i].Mask, ps[j].Mask); n != 0 {
+			return n >= 0
+		}
+		if n := bytes.Compare(ps[i].IP, ps[i].IP); n != 0 {
+			return n >= 0
+		}
+		return false
+	})
 }
