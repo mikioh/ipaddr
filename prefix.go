@@ -200,10 +200,7 @@ func (p *Prefix) MarshalBinary() ([]byte, error) {
 	}
 	var b [1 + net.IPv6len]byte
 	n := p.Len()
-	l := n / 8
-	if n%8 > 0 {
-		l++
-	}
+	l := ((n + 8 - 1) &^ (8 - 1)) / 8
 	b[0] = byte(n)
 	l++
 	copy(b[1:l], ip)
