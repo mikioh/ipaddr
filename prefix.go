@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"math/bits"
 	"net"
 )
 
@@ -76,7 +77,7 @@ func (p *Prefix) containsIPv4(q *Prefix) bool {
 	lip := q.lastIPv4Int()
 	fdiff := uint32((base ^ fip) & mask)
 	ldiff := uint32((base ^ lip) & mask)
-	return leadingZeros32(fdiff) >= l && leadingZeros32(ldiff) >= l
+	return bits.LeadingZeros32(fdiff) >= l && bits.LeadingZeros32(ldiff) >= l
 }
 
 func (p *Prefix) containsIPv6(q *Prefix) bool {
@@ -98,7 +99,7 @@ func (p *Prefix) containsIPv6(q *Prefix) bool {
 	var fdiff, ldiff ipv6Int
 	fdiff[0], fdiff[1] = (base[0]^fip[0])&mask[0], (base[1]^fip[1])&mask[1]
 	ldiff[0], ldiff[1] = (base[0]^lip[0])&mask[0], (base[1]^lip[1])&mask[1]
-	return leadingZeros64(fdiff[0]) >= l0 && leadingZeros64(fdiff[1]) >= l1 && leadingZeros64(ldiff[0]) >= l0 && leadingZeros64(ldiff[1]) >= l1
+	return bits.LeadingZeros64(fdiff[0]) >= l0 && bits.LeadingZeros64(fdiff[1]) >= l1 && bits.LeadingZeros64(ldiff[0]) >= l0 && bits.LeadingZeros64(ldiff[1]) >= l1
 }
 
 // Equal reports whether p and q are equal.
@@ -541,7 +542,7 @@ func supernetIPv4(ps []Prefix) *Prefix {
 	for _, p := range ps[1:] {
 		i := ipToIPv4Int(p.IP)
 		if diff := uint32((base ^ i) & mask); diff != 0 {
-			if l := leadingZeros32(diff); l < n {
+			if l := int(bits.LeadingZeros32(diff)); l < n {
 				n = l
 			}
 		}
@@ -561,11 +562,11 @@ func supernetIPv6(ps []Prefix) *Prefix {
 		i := ipToIPv6Int(p.IP)
 		diff[0], diff[1] = (base[0]^i[0])&mask[0], (base[1]^i[1])&mask[1]
 		if diff[0] != 0 {
-			if l := leadingZeros64(diff[0]); l < n {
+			if l := int(bits.LeadingZeros64(diff[0])); l < n {
 				n = l
 			}
 		} else if diff[1] != 0 {
-			if l := leadingZeros64(diff[1]); 64+l < n {
+			if l := int(bits.LeadingZeros64(diff[1])); 64+l < n {
 				n = 64 + l
 			}
 		}
